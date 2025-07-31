@@ -1,0 +1,14 @@
+# Entorno virtual
+venv/
+__pycache__/
+*.pyc
+
+# SQLite DB
+*.db
+
+# Archivos de configuración
+.env
+
+# Archivos de migración de Alembic (opcional dejar)
+migrations/versions/*.pyc
+*.log
