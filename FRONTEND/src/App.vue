@@ -1,16 +1,17 @@
 <template>
-  <LandingLogin />
+  <div>
+    <Header v-if="showHeader" />
+    <router-view />
+  </div>
 </template>
 
-<script>
-import LandingLogin from './views/LandingLogin.vue';
+<script setup>
+import { useRoute } from 'vue-router';
+import { computed } from 'vue';
+import Header from './components/Header.vue';
 
-export default {
-  components: {
-    LandingLogin,
-  },
-};
+const route = useRoute();
+
+// Ocultamos el header en la landing (/)
+const showHeader = computed(() => route.path !== '/');
 </script>
-<style>
-
-</style>
