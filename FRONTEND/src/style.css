@@ -1,0 +1,165 @@
+/* Importamos la fuente */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body,
+html {
+  font-family: 'Poppins', sans-serif;
+  height: 100%;
+  width: 100%;
+  background: url('/bg.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  color: white;
+  text-align: center;
+  min-height: 100vh;
+}
+
+/* Hero */
+.hero h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+/* Description */
+.description {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #111;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin: 1rem 0;
+  max-width: 500px;
+  width: 100%;
+}
+
+.description p {
+  margin-bottom: 1rem;
+}
+
+.cta {
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.cta:hover {
+  background-color: #0e70d1;
+}
+
+/* Login */
+.login {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #111;
+  padding: 1.5rem;
+  border-radius: 8px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.login form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.login input {
+  padding: 0.6rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.login button {
+  padding: 0.6rem;
+  background-color: #1e90ff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.login button:hover {
+  background-color: #0e70d1;
+}
+
+.error {
+  color: red;
+  font-size: 0.9rem;
+}
+
+/* Footer */
+.footer {
+  margin-top: auto;
+  padding: 1rem;
+  color: white;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+/* ------------------- SECCIÓN DESKTOP RESPONSIVE ------------------- */
+@media (min-width: 768px) {
+  .landing {
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 4rem 2rem;
+    min-height: 100vh;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+  }
+
+  .landing .content-row {
+    display: flex;
+    justify-content: center;
+    gap: 16rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .description,
+  .login {
+    width: 40%;
+    min-width: 350px;
+    padding: 2rem;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .description p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+  }
+
+  .cta {
+    font-size: 0.95rem;
+    padding: 0.8rem 1.5rem;
+  }
+
+  .footer {
+    margin-top: auto;
+    padding: 1rem 0;
+    font-size: 0.85rem;
+    color: #fff;
+    text-align: center;
+    width: 100%;
+    background: transparent;
+  }
+}
