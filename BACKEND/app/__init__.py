@@ -14,7 +14,7 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gamification.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = "clave-secreta-super-importante"
-    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # o 24h, lo que prefieras
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=2)  # o 24h, lo que prefieras
 
     db.init_app(app)
     jwt.init_app(app)

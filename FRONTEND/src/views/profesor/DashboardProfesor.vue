@@ -96,6 +96,7 @@ export default {
       } catch (error) {
         console.error('Error al obtener tareas:', error);
       }
+      console.log('Tareas obtenidas:', this.tareas);
     },
     async crearTarea() {
       try {
