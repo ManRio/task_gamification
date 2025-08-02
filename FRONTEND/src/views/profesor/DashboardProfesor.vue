@@ -12,7 +12,8 @@
       <p v-if="!tareas.length">No hay tareas aún.</p>
       <ul>
         <li v-for="tarea in tareas" :key="tarea.id">
-          {{ tarea.titulo }} - {{ tarea.descripcion }}
+          {{ tarea.title }} - {{ tarea.description }} (🎯
+          {{ tarea.reward }} monedas)
         </li>
       </ul>
     </section>
@@ -25,11 +26,38 @@
     <!-- Modal simulado -->
     <div v-if="mostrarCrearTarea" class="modal">
       <h3>Crear nueva tarea</h3>
-      <form @submit.prevent="crearTarea">
-        <input v-model="nuevaTarea.titulo" placeholder="Título" required />
-        <textarea v-model="nuevaTarea.descripcion" placeholder="Descripción" required></textarea>
-        <button type="submit">Crear</button>
-        <button type="button" @click="mostrarCrearTarea = false">Cancelar</button>
+      <form @submit.prevent="crearTarea" class="formulario-tarea">
+        <div class="campo">
+          <label for="titulo">Título</label>
+          <input v-model="nuevaTarea.titulo" id="titulo" required />
+        </div>
+
+        <div class="campo">
+          <label for="descripcion">Descripción</label>
+          <textarea
+            v-model="nuevaTarea.descripcion"
+            id="descripcion"
+            required
+          ></textarea>
+        </div>
+
+        <div class="campo">
+          <label for="monedas">Monedas</label>
+          <input
+            v-model.number="nuevaTarea.monedas"
+            id="monedas"
+            type="number"
+            min="1"
+            required
+          />
+        </div>
+
+        <div class="acciones">
+          <button type="submit">Crear</button>
+          <button type="button" @click="mostrarCrearTarea = false">
+            Cancelar
+          </button>
+        </div>
       </form>
     </div>
   </div>
@@ -47,6 +75,7 @@ export default {
       nuevaTarea: {
         titulo: '',
         descripcion: '',
+        monedas: 1,
       },
     };
   },
@@ -62,7 +91,7 @@ export default {
   methods: {
     async obtenerTareas() {
       try {
-        const res = await api.get(`/tasks/profesor/${this.user.id}`);
+        const res = await api.get(`/tasks/mine`);
         this.tareas = res.data;
       } catch (error) {
         console.error('Error al obtener tareas:', error);
@@ -70,10 +99,10 @@ export default {
     },
     async crearTarea() {
       try {
-        const res = await api.post('/tasks', {
-          titulo: this.nuevaTarea.titulo,
-          descripcion: this.nuevaTarea.descripcion,
-          profesor_id: this.user.id,
+        const res = await api.post('/tasks/create', {
+          title: this.nuevaTarea.titulo,
+          description: this.nuevaTarea.descripcion,
+          reward: this.nuevaTarea.monedas,
         });
         this.tareas.push(res.data);
         this.nuevaTarea.titulo = '';
@@ -109,6 +138,35 @@ export default {
   background: white;
   padding: 2rem;
   border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.formulario-tarea {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.campo label {
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+.campo input,
+.campo textarea {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
 }
 </style>

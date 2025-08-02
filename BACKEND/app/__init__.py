@@ -2,6 +2,8 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
+from datetime import timedelta
+
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -12,10 +14,16 @@ def create_app():
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///gamification.db"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JWT_SECRET_KEY"] = "clave-secreta-super-importante"
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)  # o 24h, lo que prefieras
 
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app)
+    CORS(app,
+     resources={r"/api/*": {"origins": ["http://localhost:5173"]}},
+     supports_credentials=True,
+     allow_headers=["Content-Type", "Authorization"],
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
     from .routes.auth import auth_bp
     from .routes.tasks import tasks_bp
