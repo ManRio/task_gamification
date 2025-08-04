@@ -2,8 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '../stores/userStore';
 
 import LandingLogin from '../views/LandingLogin.vue';
-import DashboardProfesor from '../views/profesor/DashboardProfesor.vue';
+
 import DashboardAlumno from '../views/alumno/DashboardAlumno.vue';
+import ProfesorLayout from '../layouts/ProfesorLayout.vue';
+
+import Alumnos from '../views/profesor/Alumnos.vue';
+import Ranking from '../views/profesor/Ranking.vue';
+import Canjes from '../views/profesor/Canjes.vue';
+import Recompensas from '../views/profesor/Recompensas.vue';
+import DashboardProfesor from '../views/profesor/DashboardProfesor.vue';
 
 const routes = [
   {
@@ -13,17 +20,40 @@ const routes = [
   },
   {
     path: '/profesor',
-    name: 'DashboardProfesor',
-    component: DashboardProfesor,
-    meta: { requiresAuth: true, role: 'profesor' },
+    component: ProfesorLayout, // 👈 Aquí usamos el layout que contiene Sidebar + Header
+    children: [
+      {
+        path: '',
+        name: 'DashboardProfesor',
+        component: DashboardProfesor,
+      },
+      {
+        path: 'alumnos',
+        name: 'Alumnos',
+        component: Alumnos,
+      },
+      {
+        path: 'ranking',
+        name: 'Ranking',
+        component: Ranking,
+      },
+      {
+        path: 'canjes',
+        name: 'Canjes',
+        component: Canjes,
+      },
+      {
+        path: 'recompensas',
+        name: 'Recompensas',
+        component: Recompensas,
+      },
+    ],
   },
   {
     path: '/alumno',
     name: 'DashboardAlumno',
     component: DashboardAlumno,
-    meta: { requiresAuth: true, role: 'alumno' },
-  },
-  // Redirección por defecto
+  }, // Redirección por defecto
   {
     path: '/:pathMatch(.*)*',
     redirect: '/',

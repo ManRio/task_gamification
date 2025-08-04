@@ -10,6 +10,12 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)  # 'alumno' o 'profesor'
     coins = db.Column(db.Integer, default=0)
 
+    # NUEVOS CAMPOS:
+    first_name = db.Column(db.String(80), nullable=True)
+    last_name = db.Column(db.String(80), nullable=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    course = db.Column(db.String(40), nullable=True)
+
 class Task(db.Model):
     __tablename__ = "tasks"
     id = db.Column(db.Integer, primary_key=True)

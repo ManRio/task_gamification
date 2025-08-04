@@ -1,77 +1,50 @@
 <template>
-  <header class="app-header">
-    <div class="logo-section">
-      <img src="/logo.png" alt="TaskGamify logo" class="logo" />
-      <span class="title">TaskGamify</span>
-    </div>
-
-    <div v-if="userStore.isAuthenticated" class="user-section">
-      <span class="username">Hola, {{ userStore.user.username }}</span>
+  <header class="header">
+    <img src="/logo.png" alt="Logo" class="logo" />
+    <h1 class="titulo">Task Gamification</h1>
+    <div class="acciones">
+      <span>{{ user.username }}</span>
       <button @click="logout">Cerrar sesión</button>
     </div>
   </header>
 </template>
 
-<script setup>
+<script>
 import { useUserStore } from '../stores/userStore';
-import { useRouter } from 'vue-router';
 
-const userStore = useUserStore();
-const router = useRouter();
-
-const logout = () => {
-  userStore.logout();
-  router.push('/');
+export default {
+  setup() {
+    const userStore = useUserStore();
+    return {
+      user: userStore.user,
+      logout: userStore.logout,
+    };
+  },
 };
 </script>
 
 <style scoped>
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #1e90ff;
-  padding: 1rem 2rem;
+.header {
+  height: 60px;
+  background: #34495e;
   color: white;
-}
-
-.logo-section {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .logo {
-  height: 32px;
-  width: 32px;
+  height: 40px;
 }
 
-.title {
-  font-size: 1.4rem;
-  font-weight: 600;
-}
-
-.user-section {
+.acciones {
   display: flex;
-  align-items: center;
   gap: 1rem;
-}
-
-.username {
-  font-weight: 500;
-}
-
-button {
-  background-color: white;
-  color: #1e90ff;
-  border: none;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #f0f0f0;
+  align-items: center;
 }
 </style>
