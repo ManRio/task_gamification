@@ -15,6 +15,10 @@ def create_student():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
+    first_name = data.get("first_name")
+    last_name = data.get("last_name")
+    email = data.get("email")
+    course = data.get("course")
 
     if not username or not password:
         return jsonify({"msg": "Username y password requeridos"}), 400
@@ -24,35 +28,21 @@ def create_student():
         return jsonify({"msg": "Este usuario ya existe"}), 409
 
     hashed_pw = generate_password_hash(password)
-    new_user = User(username=username, password=hashed_pw, role="alumno")
-    
+    new_user = User(
+        username=username,
+        password=hashed_pw,
+        role="alumno",
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        course=course,
+    )
+
     db.session.add(new_user)
     db.session.commit()
 
     return jsonify({"msg": "Alumno creado exitosamente"}), 201
 
-# ELIMINAR UN ALUMNO (solo profesor)
-@students_bp.route("/<int:student_id>", methods=["DELETE"])
-@jwt_required()
-@role_required("profesor")
-def delete_student(student_id):
-    student = User.query.get(student_id)
-
-    if not student:
-        return jsonify({"msg": "Alumno no encontrado"}), 404
-
-    if student.role != "alumno":
-        return jsonify({"msg": "Solo se pueden eliminar usuarios con rol de alumno"}), 400
-
-    # Eliminar tareas completadas por el alumno
-    from ..models import TaskCompletion, RewardRedemption
-    TaskCompletion.query.filter_by(student_id=student.id).delete()
-    RewardRedemption.query.filter_by(student_id=student.id).delete()
-
-    db.session.delete(student)
-    db.session.commit()
-
-    return jsonify({"msg": "Alumno eliminado correctamente"}), 200
 
 # LISTADO DE TODOS LOS ALUMNOS (solo profesor)
 @students_bp.route("/all", methods=["GET"])
@@ -65,6 +55,10 @@ def list_all_students():
         {
             "id": student.id,
             "username": student.username,
+            "first_name": student.first_name,
+            "last_name": student.last_name,
+            "email": student.email,
+            "course": student.course,
             "coins": student.coins
         } for student in students
     ]), 200
@@ -83,6 +77,10 @@ def view_profile():
     return jsonify({
         "id": student.id,
         "username": student.username,
+        "first_name": student.first_name,
+        "last_name": student.last_name,
+        "email": student.email,
+        "course": student.course,
         "role": student.role,
         "coins": student.coins
     }), 200
@@ -176,6 +174,10 @@ def stats_alumno(alumno_id):
     return jsonify({
         "alumno_id": alumno.id,
         "username": alumno.username,
+        "first_name": alumno.first_name,
+        "last_name": alumno.last_name,
+        "email": alumno.email,
+        "course": alumno.course,
         "tareas_realizadas": tareas_realizadas,
         "monedas_actuales": monedas_actuales
     }), 200
@@ -198,3 +200,38 @@ def stats_tarea(task_id):
         "veces_completada": completadas,
         "veces_aprobada": aprobadas
     }), 200
+
+# EDITAR PERFIL DEL ALUMNO (profesor)
+@students_bp.route("/<int:student_id>", methods=["PUT"])
+@jwt_required()
+@role_required("profesor")
+def update_student(student_id):
+    data = request.get_json()
+    student = User.query.get(student_id)
+
+    if not student or student.role != "alumno":
+        return jsonify({"msg": "Alumno no encontrado"}), 404
+
+    # Campos editables
+    student.first_name = data.get("first_name", student.first_name)
+    student.last_name = data.get("last_name", student.last_name)
+    student.email = data.get("email", student.email)
+    student.course = data.get("course", student.course)
+
+    db.session.commit()
+
+    return jsonify({"msg": "Alumno actualizado correctamente"}), 200
+
+@students_bp.route("/<int:student_id>", methods=["DELETE"])
+@jwt_required()
+@role_required("profesor")
+def delete_student(student_id):
+    student = User.query.get(student_id)
+
+    if not student or student.role != "alumno":
+        return jsonify({"msg": "Alumno no encontrado"}), 404
+
+    db.session.delete(student)
+    db.session.commit()
+
+    return jsonify({"msg": "Alumno eliminado correctamente"}), 200
