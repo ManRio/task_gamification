@@ -1,117 +1,110 @@
 <template>
   <div class="dashboard">
-    <h1>¡Hola, {{ user.username }}!</h1>
-    <p>Bienvenido a tu panel de control.</p>
+    <h1>Resumen General</h1>
 
-    <section class="actions">
-      <button @click="mostrarCrearTarea = true">+ Añadir nueva tarea</button>
-    </section>
+    <!-- Tarjetas estadísticas -->
+    <div class="tarjetas">
+      <div class="tarjeta" v-for="(valor, clave) in estadisticas" :key="clave">
+        <h3>{{ clave.replaceAll('_', ' ').toUpperCase() }}</h3>
+        <p>{{ valor }}</p>
+      </div>
+    </div>
 
-    <section class="tareas">
-      <h2>Tareas asignadas</h2>
-      <p v-if="!tareas.length">No hay tareas aún.</p>
-      <ul>
-        <li v-for="tarea in tareas" :key="tarea.id">
-          {{ tarea.title }} - {{ tarea.description }} (🎯
-          {{ tarea.reward }} monedas)
+    <!-- Podio de alumnos -->
+    <div class="podio">
+      <h2>Top 3 alumnos</h2>
+      <ol>
+        <li v-for="(alumno, i) in topAlumnos" :key="alumno.username">
+          <span>{{ ['🥇', '🥈', '🥉'][i] }}</span>
+          {{ alumno.username }} - {{ alumno.coins }} monedas
         </li>
-      </ul>
-    </section>
+      </ol>
+    </div>
 
-    <section class="ranking">
-      <h2>Ranking de alumnos</h2>
-      <p>Próximamente...</p>
-    </section>
+    <!-- Gráfico de monedas -->
+    <div class="grafico">
+      <h2>Distribución de monedas</h2>
+      <BarChart :chartData="chartData" />
+    </div>
 
-    <!-- Modal simulado -->
-    <div v-if="mostrarCrearTarea" class="modal">
-      <h3>Crear nueva tarea</h3>
-      <form @submit.prevent="crearTarea" class="formulario-tarea">
-        <div class="campo">
-          <label for="titulo">Título</label>
-          <input v-model="nuevaTarea.titulo" id="titulo" required />
-        </div>
-
-        <div class="campo">
-          <label for="descripcion">Descripción</label>
-          <textarea
-            v-model="nuevaTarea.descripcion"
-            id="descripcion"
-            required
-          ></textarea>
-        </div>
-
-        <div class="campo">
-          <label for="monedas">Monedas</label>
-          <input
-            v-model.number="nuevaTarea.monedas"
-            id="monedas"
-            type="number"
-            min="1"
-            required
-          />
-        </div>
-
-        <div class="acciones">
-          <button type="submit">Crear</button>
-          <button type="button" @click="mostrarCrearTarea = false">
-            Cancelar
-          </button>
-        </div>
-      </form>
+    <!-- Historial de canjes -->
+    <div class="historial">
+      <h2>Historial de Canjes</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Alumno</th>
+            <th>Recompensa</th>
+            <th>Coste</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="canje in canjes" :key="canje.id">
+            <td>{{ canje.student_name }}</td>
+            <td>{{ canje.reward_name }}</td>
+            <td>{{ canje.reward_cost }} monedas</td>
+            <td>{{ new Date(canje.redeemed_at).toLocaleString() }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <script>
 import api from '../../api';
-import { useUserStore } from '../../stores/userStore';
+import BarChart from '../../components/BarChart.vue';
 
 export default {
+  components: { BarChart },
   data() {
     return {
-      tareas: [],
-      mostrarCrearTarea: false,
-      nuevaTarea: {
-        titulo: '',
-        descripcion: '',
-        monedas: 1,
-      },
+      estadisticas: {},
+      topAlumnos: [],
+      rankingData: [],
+      canjes: [],
+      chartData: null,
     };
   },
-  computed: {
-    user() {
-      const store = useUserStore();
-      return store.user || {};
-    },
-  },
-  mounted() {
-    this.obtenerTareas();
+  async mounted() {
+    try {
+      await this.obtenerEstadisticas();
+      await this.obtenerRanking();
+      await this.obtenerCanjes();
+    } catch (err) {
+      console.error('Error al montar dashboard:', err);
+    }
   },
   methods: {
-    async obtenerTareas() {
-      try {
-        const res = await api.get(`/tasks/mine`);
-        this.tareas = res.data;
-      } catch (error) {
-        console.error('Error al obtener tareas:', error);
-      }
-      console.log('Tareas obtenidas:', this.tareas);
+    async obtenerEstadisticas() {
+      const res = await api.get('/students/stats/global');
+      this.estadisticas = res.data;
     },
-    async crearTarea() {
-      try {
-        const res = await api.post('/tasks/create', {
-          title: this.nuevaTarea.titulo,
-          description: this.nuevaTarea.descripcion,
-          reward: this.nuevaTarea.monedas,
-        });
-        this.tareas.push(res.data);
-        this.nuevaTarea.titulo = '';
-        this.nuevaTarea.descripcion = '';
-        this.mostrarCrearTarea = false;
-      } catch (error) {
-        console.error('Error al crear tarea:', error);
+    async obtenerRanking() {
+      const res = await api.get('/students/ranking/all');
+      const alumnos = res.data;
+      this.topAlumnos = alumnos.slice(0, 3);
+      this.rankingData = alumnos.slice(0, 10);
+
+      if (this.rankingData.length > 0) {
+        this.chartData = {
+          labels: this.rankingData.map((a) => a.username),
+          datasets: [
+            {
+              label: 'Monedas',
+              backgroundColor: '#42A5F5',
+              data: this.rankingData.map((a) => a.coins),
+            },
+          ],
+        };
+      } else {
+        this.chartData = null;
       }
+    },
+    async obtenerCanjes() {
+      const res = await api.get('/rewards/history/all');
+      this.canjes = res.data;
     },
   },
 };
@@ -120,54 +113,43 @@ export default {
 <style scoped>
 .dashboard {
   padding: 2rem;
-}
-
-.actions {
-  margin-bottom: 2rem;
-}
-
-.tareas,
-.ranking {
-  margin-top: 2rem;
-}
-
-.modal {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-}
-
-.formulario-tarea {
   display: flex;
   flex-direction: column;
+  gap: 2rem;
+}
+
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 1rem;
 }
-
-.campo {
-  display: flex;
-  flex-direction: column;
+.tarjeta {
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
 }
 
-.campo label {
-  font-weight: bold;
-  margin-bottom: 0.3rem;
+.podio ol {
+  list-style: none;
+  padding: 0;
 }
 
-.campo input,
-.campo textarea {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
+.podio li {
+  background: #ecf0f1;
+  padding: 0.5rem 1rem;
+  margin: 0.3rem 0;
   border-radius: 6px;
 }
 
-.acciones {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+.historial table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.historial th,
+.historial td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
 }
 </style>

@@ -139,7 +139,7 @@ def my_position():
     return jsonify({"msg": "Alumno no encontrado"}), 404
 
 # ESTADÍSTICAS GLOBALES (solo profesor)
-@students_bp.route("/stats", methods=["GET"])
+@students_bp.route("/stats/global", methods=["GET"])
 @jwt_required()
 @role_required("profesor")
 def global_stats():
@@ -235,3 +235,20 @@ def delete_student(student_id):
     db.session.commit()
 
     return jsonify({"msg": "Alumno eliminado correctamente"}), 200
+
+# RANKING GENERAL DE ALUMNOS (para el profesor)
+@students_bp.route("/ranking/all", methods=["GET"])
+@jwt_required()
+@role_required("profesor")
+def ranking_profesor():
+    students = User.query.filter_by(role="alumno").order_by(User.coins.desc()).all()
+
+    ranking_list = []
+    for idx, student in enumerate(students, start=1):
+        ranking_list.append({
+            "position": idx,
+            "username": student.username,
+            "coins": student.coins
+        })
+
+    return jsonify(ranking_list), 200

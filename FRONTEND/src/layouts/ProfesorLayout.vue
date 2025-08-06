@@ -28,8 +28,25 @@ import Header from '../components/Header.vue';
 }
 
 .main-content {
+  position: relative; /* 🔑 Necesario para que ::before se posicione dentro */
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+  background-color: rgb(255, 255, 255);
+  z-index: 0;
+}
+
+/* Fondo con transparencia sin afectar contenido */
+.main-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('/logonegro.png'); /* Ruta relativa desde /public */
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.09; /* Ajusta la transparencia aquí */
+  pointer-events: none;
+  z-index: -1; /* Asegura que esté debajo del contenido */
 }
 </style>

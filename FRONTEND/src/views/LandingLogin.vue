@@ -5,6 +5,10 @@
     </section>
 
     <section class="hero-block">
+      <div class="wrapper-logo">
+        <img src="/logo.png" alt="Logo" class="logo" />
+      </div>
+
       <div class="content-row">
         <section class="description">
           <p>
@@ -110,6 +114,23 @@ export default {
   background-size: cover;
 }
 
+.wrapper-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 80%;
+  transform: translate(-50%, -50%);
+  z-index: 1; /* Menor que las tarjetas */
+  opacity: 0.15; /* Transparencia para suavizar */
+  pointer-events: none; /* Para que no interfiera con clics */
+}
+
+.logo {
+  max-width: 100%; /* Ajusta el tamaño según necesidad */
+  width: 100%;
+  height: auto;
+}
+
 /* Hero */
 .hero h1 {
   font-size: 2rem;
@@ -119,11 +140,13 @@ export default {
 
 /* Hero Block */
 .hero-block {
+  position: relative; /* Necesario para posicionar hijos absolutamente dentro */
   height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 2rem 1rem;
+  overflow: hidden; /* Oculta posibles desbordes */
 }
 
 .content-row {
@@ -199,6 +222,13 @@ export default {
 .error {
   color: red;
   font-size: 0.9rem;
+}
+
+.description,
+.login {
+  position: relative;
+  z-index: 2; /* Mayor que la imagen de fondo */
+  backdrop-filter: blur(10px); /* Suaviza el fondo */
 }
 
 /* Footer */

@@ -25,6 +25,64 @@ def create_reward():
 
     return jsonify({"msg": "Recompensa creada correctamente"}), 201
 
+# ELIMINAR UNA RECOMPENSA
+@rewards_bp.route("/<int:reward_id>", methods=["DELETE"])
+@jwt_required()
+@role_required("profesor")
+def delete_reward(reward_id):
+    reward = Reward.query.get(reward_id)
+    if not reward:
+        return jsonify({"msg": "Recompensa no encontrada"}), 404
+
+    db.session.delete(reward)
+    db.session.commit()
+    return jsonify({"msg": "Recompensa eliminada"}), 200
+
+# EDITAR UNA RECOMPENSA
+@rewards_bp.route("/<int:reward_id>", methods=["PUT"])
+@jwt_required()
+@role_required("profesor")
+def update_reward(reward_id):
+    reward = Reward.query.get(reward_id)
+    if not reward:
+        return jsonify({"msg": "Recompensa no encontrada"}), 404
+
+    data = request.get_json()
+    reward.name = data.get("name", reward.name)
+    reward.description = data.get("description", reward.description)
+    reward.cost = data.get("cost", reward.cost)
+
+    db.session.commit()
+    return jsonify({
+        "id": reward.id,
+        "name": reward.name,
+        "description": reward.description,
+        "cost": reward.cost
+    }), 200
+
+# HISTORIAL DE CANJES PARA PROFESOR
+@rewards_bp.route("/history/all", methods=["GET"])
+@jwt_required()
+@role_required("profesor")
+def full_redemption_history():
+    redemptions = RewardRedemption.query.all()
+    result = []
+
+    for redemption in redemptions:
+        student = User.query.get(redemption.student_id)
+        reward = Reward.query.get(redemption.reward_id)
+
+        result.append({
+            "id": redemption.id,
+            "student_id": student.id,
+            "student_name": student.username,
+            "reward_name": reward.name,
+            "reward_cost": reward.cost,
+            "redeemed_at": redemption.redeemed_at.isoformat()
+        })
+
+    return jsonify(result), 200
+
 # LISTADO DE RECOMPENSAS
 @rewards_bp.route("/list", methods=["GET"])
 @jwt_required()
