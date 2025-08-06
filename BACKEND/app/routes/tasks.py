@@ -34,6 +34,42 @@ def create_task():
 
     return jsonify({"msg": "Tarea creada exitosamente"}), 201
 
+# EDITAR TAREA
+@tasks_bp.route("/<int:task_id>", methods=["PUT"])
+@jwt_required()
+@role_required("profesor")
+def update_task(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"msg": "Tarea no encontrada"}), 404
+
+    data = request.get_json()
+    task.title = data.get("title", task.title)
+    task.description = data.get("description", task.description)
+    task.reward = data.get("reward", task.reward)
+
+    db.session.commit()
+    return jsonify({
+        "id": task.id,
+        "title": task.title,
+        "description": task.description,
+        "reward": task.reward,
+        "created_by": task.created_by
+    }), 200
+
+# ELIMINAR TAREA
+@tasks_bp.route("/<int:task_id>", methods=["DELETE"])
+@jwt_required()
+@role_required("profesor")
+def delete_task(task_id):
+    task = Task.query.get(task_id)
+    if not task:
+        return jsonify({"msg": "Tarea no encontrada"}), 404
+
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"msg": "Tarea eliminada"}), 200
+
  # OBTENER TODAS LAS TAREAS
 @tasks_bp.route("/", methods=["GET"])
 @jwt_required()

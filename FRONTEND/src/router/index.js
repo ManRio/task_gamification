@@ -11,6 +11,7 @@ import Ranking from '../views/profesor/Ranking.vue';
 import Canjes from '../views/profesor/Canjes.vue';
 import Recompensas from '../views/profesor/Recompensas.vue';
 import DashboardProfesor from '../views/profesor/DashboardProfesor.vue';
+import Tareas from '../views/profesor/Tareas.vue';
 
 const routes = [
   {
@@ -26,6 +27,11 @@ const routes = [
         path: '',
         name: 'DashboardProfesor',
         component: DashboardProfesor,
+      },
+      {
+        path: '/profesor/tareas',
+        name: 'Tareas',
+        component: Tareas,
       },
       {
         path: 'alumnos',

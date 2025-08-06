@@ -4,7 +4,8 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 
 const items = [
-  { to: '/profesor', label: 'Tareas' },
+  { to: '/profesor', label: 'Panel Principal' },
+  { to: '/profesor/tareas', label: 'Tareas' },
   { to: '/profesor/alumnos', label: 'Alumnos' },
   { to: '/profesor/ranking', label: 'Ranking' },
   { to: '/profesor/canjes', label: 'Histórico de canjes' },
