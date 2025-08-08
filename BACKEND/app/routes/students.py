@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash
 from .. import db
 from ..models import User, TaskCompletion, Task
 from ..utils.auth_helpers import role_required
+from datetime import datetime, timezone
 
 students_bp = Blueprint("students", __name__)
 
@@ -23,7 +24,6 @@ def create_student():
     if not username or not password:
         return jsonify({"msg": "Username y password requeridos"}), 400
 
-    # Verificar si ya existe
     if User.query.filter_by(username=username).first():
         return jsonify({"msg": "Este usuario ya existe"}), 409
 
@@ -37,12 +37,9 @@ def create_student():
         email=email,
         course=course,
     )
-
     db.session.add(new_user)
     db.session.commit()
-
     return jsonify({"msg": "Alumno creado exitosamente"}), 201
-
 
 # LISTADO DE TODOS LOS ALUMNOS (solo profesor)
 @students_bp.route("/all", methods=["GET"])
@@ -50,17 +47,16 @@ def create_student():
 @role_required("profesor")
 def list_all_students():
     students = User.query.filter_by(role="alumno").all()
-
     return jsonify([
         {
-            "id": student.id,
-            "username": student.username,
-            "first_name": student.first_name,
-            "last_name": student.last_name,
-            "email": student.email,
-            "course": student.course,
-            "coins": student.coins
-        } for student in students
+            "id": s.id,
+            "username": s.username,
+            "first_name": s.first_name,
+            "last_name": s.last_name,
+            "email": s.email,
+            "course": s.course,
+            "coins": s.coins
+        } for s in students
     ]), 200
 
 # VER PERFIL DEL ALUMNO
@@ -70,7 +66,6 @@ def list_all_students():
 def view_profile():
     user_id = int(get_jwt_identity())
     student = User.query.get(user_id)
-
     if not student:
         return jsonify({"msg": "Usuario no encontrado"}), 404
 
@@ -91,33 +86,25 @@ def view_profile():
 @role_required("alumno")
 def view_stats():
     user_id = int(get_jwt_identity())
-
     total_tasks = TaskCompletion.query.filter_by(student_id=user_id).count()
     validated = TaskCompletion.query.filter_by(student_id=user_id, is_validated=True).count()
     approved = TaskCompletion.query.filter_by(student_id=user_id, is_validated=True, is_approved=True).count()
-
     return jsonify({
         "total_completadas": total_tasks,
         "validadas": validated,
         "aprobadas": approved
     }), 200
 
-# RANKING GENERAL DE ALUMNOS
+# RANKING GENERAL DE ALUMNOS (vista alumno)
 @students_bp.route("/ranking", methods=["GET"])
 @jwt_required()
 @role_required("alumno")
 def ranking():
     students = User.query.filter_by(role="alumno").order_by(User.coins.desc()).all()
-
-    ranking_list = []
-    for idx, student in enumerate(students, start=1):
-        ranking_list.append({
-            "position": idx,
-            "username": student.username,
-            "coins": student.coins
-        })
-
-    return jsonify(ranking_list), 200
+    return jsonify([
+        {"position": idx, "username": s.username, "coins": s.coins}
+        for idx, s in enumerate(students, start=1)
+    ]), 200
 
 # MI POSICIÓN EN EL RANKING
 @students_bp.route("/ranking/me", methods=["GET"])
@@ -125,17 +112,10 @@ def ranking():
 @role_required("alumno")
 def my_position():
     user_id = int(get_jwt_identity())
-
     students = User.query.filter_by(role="alumno").order_by(User.coins.desc()).all()
-    
-    for idx, student in enumerate(students, start=1):
-        if student.id == user_id:
-            return jsonify({
-                "position": idx,
-                "username": student.username,
-                "coins": student.coins
-            }), 200
-
+    for idx, s in enumerate(students, start=1):
+        if s.id == user_id:
+            return jsonify({"position": idx, "username": s.username, "coins": s.coins}), 200
     return jsonify({"msg": "Alumno no encontrado"}), 404
 
 # ESTADÍSTICAS GLOBALES (solo profesor)
@@ -149,7 +129,6 @@ def global_stats():
     total_tareas = Task.query.count()
     total_completadas = TaskCompletion.query.count()
     monedas_totales = db.session.query(db.func.sum(User.coins)).scalar() or 0
-
     return jsonify({
         "total_usuarios": total_users,
         "total_alumnos": total_alumnos,
@@ -169,8 +148,6 @@ def stats_alumno(alumno_id):
         return jsonify({"msg": "Alumno no encontrado"}), 404
 
     tareas_realizadas = TaskCompletion.query.filter_by(student_id=alumno_id, is_approved=True).count()
-    monedas_actuales = alumno.coins
-
     return jsonify({
         "alumno_id": alumno.id,
         "username": alumno.username,
@@ -179,7 +156,7 @@ def stats_alumno(alumno_id):
         "email": alumno.email,
         "course": alumno.course,
         "tareas_realizadas": tareas_realizadas,
-        "monedas_actuales": monedas_actuales
+        "monedas_actuales": alumno.coins
     }), 200
 
 # ESTADÍSTICAS DE UNA TAREA (solo profesor)
@@ -193,7 +170,6 @@ def stats_tarea(task_id):
 
     completadas = TaskCompletion.query.filter_by(task_id=task_id).count()
     aprobadas = TaskCompletion.query.filter_by(task_id=task_id, is_approved=True).count()
-
     return jsonify({
         "task_id": task.id,
         "title": task.title,
@@ -208,18 +184,14 @@ def stats_tarea(task_id):
 def update_student(student_id):
     data = request.get_json()
     student = User.query.get(student_id)
-
     if not student or student.role != "alumno":
         return jsonify({"msg": "Alumno no encontrado"}), 404
 
-    # Campos editables
     student.first_name = data.get("first_name", student.first_name)
     student.last_name = data.get("last_name", student.last_name)
     student.email = data.get("email", student.email)
     student.course = data.get("course", student.course)
-
     db.session.commit()
-
     return jsonify({"msg": "Alumno actualizado correctamente"}), 200
 
 @students_bp.route("/<int:student_id>", methods=["DELETE"])
@@ -227,13 +199,10 @@ def update_student(student_id):
 @role_required("profesor")
 def delete_student(student_id):
     student = User.query.get(student_id)
-
     if not student or student.role != "alumno":
         return jsonify({"msg": "Alumno no encontrado"}), 404
-
     db.session.delete(student)
     db.session.commit()
-
     return jsonify({"msg": "Alumno eliminado correctamente"}), 200
 
 # RANKING GENERAL DE ALUMNOS (para el profesor)
@@ -242,13 +211,126 @@ def delete_student(student_id):
 @role_required("profesor")
 def ranking_profesor():
     students = User.query.filter_by(role="alumno").order_by(User.coins.desc()).all()
+    return jsonify([
+        {"position": idx, "username": s.username, "coins": s.coins}
+        for idx, s in enumerate(students, start=1)
+    ]), 200
 
-    ranking_list = []
-    for idx, student in enumerate(students, start=1):
-        ranking_list.append({
-            "position": idx,
-            "username": student.username,
-            "coins": student.coins
+# ASIGNAR MONEDAS MANUALMENTE (solo profesor)
+@students_bp.route("/add-coins", methods=["POST"])
+@jwt_required()
+@role_required("profesor")
+def add_coins():
+    data = request.get_json() or {}
+    student_id = data.get("student_id")
+    coins = data.get("coins")
+    reason = (data.get("reason") or "").strip()
+
+    if not isinstance(student_id, int) or not isinstance(coins, int):
+        return jsonify({"msg": "Campos 'student_id' (int) y 'coins' (int) requeridos"}), 400
+    if coins <= 0:
+        return jsonify({"msg": "El número de monedas debe ser mayor que 0"}), 400
+
+    student = User.query.get(student_id)
+    if not student or student.role != "alumno":
+        return jsonify({"msg": "Alumno no encontrado"}), 404
+
+    student.coins += coins
+
+    # (Opcional) registrar en CoinLog si existe el modelo
+    try:
+        from ..models import CoinLog  # si no existe, este import fallará
+        admin_id = int(get_jwt_identity())
+        log = CoinLog(
+            student_id=student.id,
+            coins=coins,
+            reason=reason or "asignación manual",
+            assigned_by=admin_id,
+        )
+        db.session.add(log)
+    except Exception:
+        # Silencioso si no existe CoinLog; no interrumpe la asignación de monedas
+        pass
+
+    db.session.commit()
+    return jsonify({
+        "msg": "Monedas asignadas correctamente",
+        "student_id": student.id,
+        "new_balance": student.coins
+    }), 200
+
+@students_bp.route("/coin-events", methods=["GET"])
+@jwt_required()
+@role_required("profesor")
+def coin_events():
+    """Últimos movimientos de monedas (aprobaciones de tareas + asignaciones manuales)."""
+    try:
+        limit = int(request.args.get("limit", 10))
+    except ValueError:
+        limit = 10
+
+    events = []
+
+    # ---- Aprobaciones de tareas ----
+    # Nota: usamos completed_at como timestamp de referencia (si tienes validated_at, úsalo).
+    rows = db.session.query(
+        TaskCompletion.id.label("completion_id"),
+        TaskCompletion.student_id.label("student_id"),
+        User.username.label("username"),
+        Task.title.label("task_title"),
+        Task.reward.label("coins"),
+        TaskCompletion.completed_at.label("ts"),
+    ).join(User, User.id == TaskCompletion.student_id
+    ).join(Task, Task.id == TaskCompletion.task_id
+    ).filter(
+        TaskCompletion.is_validated == True,
+        TaskCompletion.is_approved == True
+    ).order_by(TaskCompletion.completed_at.desc()
+    ).limit(limit * 2).all()  # pedimos un poco más por si luego mezclamos con manuales
+
+    for r in rows:
+        ts = r.ts or datetime.now(timezone.utc)
+        events.append({
+            "type": "task",
+            "timestamp": ts.isoformat(),
+            "student_id": r.student_id,
+            "username": r.username,
+            "coins": r.coins,
+            "detail": r.task_title,
+            "ref": f"completion:{r.completion_id}"
         })
 
-    return jsonify(ranking_list), 200
+    # ---- Asignaciones manuales (si existe CoinLog) ----
+    try:
+        from ..models import CoinLog
+        mrows = db.session.query(
+            CoinLog.id.label("log_id"),
+            CoinLog.student_id.label("student_id"),
+            User.username.label("username"),
+            CoinLog.coins.label("coins"),
+            CoinLog.reason.label("reason"),
+            CoinLog.timestamp.label("ts"),
+        ).join(User, User.id == CoinLog.student_id
+        ).order_by(CoinLog.timestamp.desc()
+        ).limit(limit * 2).all()
+
+        for r in mrows:
+            ts = r.ts or datetime.now(timezone.utc)
+            events.append({
+                "type": "manual",
+                "timestamp": ts.isoformat(),
+                "student_id": r.student_id,
+                "username": r.username,
+                "coins": r.coins,
+                "detail": r.reason or "asignación manual",
+                "ref": f"coinlog:{r.log_id}"
+            })
+    except Exception:
+        # Si no hay CoinLog, simplemente omitimos manuales
+        pass
+
+    # Mezcla y recorte final
+    events.sort(key=lambda e: e["timestamp"], reverse=True)
+    events = events[:limit]
+
+    return jsonify(events), 200

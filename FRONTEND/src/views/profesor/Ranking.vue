@@ -2,6 +2,7 @@
   <div class="contenedor">
     <h1>Ranking de Alumnos</h1>
 
+    <!-- Tabla Ranking -->
     <table class="tabla" v-if="ranking.length">
       <thead>
         <tr>
@@ -18,8 +19,34 @@
         </tr>
       </tbody>
     </table>
-
     <p v-else>No hay datos de ranking disponibles.</p>
+
+    <!-- Últimas concesiones -->
+    <h2 style="margin-top: 2rem">Últimas concesiones de monedas</h2>
+    <table class="tabla" v-if="movimientos.length">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Usuario</th>
+          <th>Monedas</th>
+          <th>Origen</th>
+          <th>Detalle</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(m, idx) in movimientos" :key="m.ref || idx">
+          <td>{{ formatearFecha(m.timestamp) }}</td>
+          <td>{{ m.username }}</td>
+          <td>+{{ m.coins }}</td>
+          <td>
+            <span v-if="m.type === 'task'">Tarea aprobada</span>
+            <span v-else>Asignación manual</span>
+          </td>
+          <td>{{ m.detail }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p v-else>No hay movimientos recientes.</p>
   </div>
 </template>
 
@@ -31,10 +58,12 @@ export default {
   data() {
     return {
       ranking: [],
+      movimientos: [],
     };
   },
   mounted() {
     this.obtenerRanking();
+    this.obtenerMovimientos();
   },
   methods: {
     async obtenerRanking() {
@@ -46,6 +75,24 @@ export default {
         useToast().error('No se pudo obtener el ranking');
       }
     },
+    async obtenerMovimientos() {
+      try {
+        const res = await api.get('/students/coin-events', {
+          params: { limit: 10 },
+        });
+        this.movimientos = res.data;
+      } catch (error) {
+        console.error('Error al obtener movimientos:', error);
+        useToast().error('No se pudieron cargar los últimos movimientos');
+      }
+    },
+    formatearFecha(iso) {
+      try {
+        return new Date(iso).toLocaleString();
+      } catch {
+        return iso || '—';
+      }
+    },
   },
 };
 </script>
@@ -54,20 +101,17 @@ export default {
 .contenedor {
   padding: 2rem;
 }
-
 .tabla {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1.5rem;
 }
-
 .tabla th,
 .tabla td {
   padding: 0.75rem 1rem;
   border: 1px solid #ccc;
   text-align: left;
 }
-
 .tabla th {
   background-color: #f5f5f5;
 }

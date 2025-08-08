@@ -21,10 +21,29 @@
       </ol>
     </div>
 
-    <!-- Gráfico de monedas -->
+    <<!-- Distribución de monedas en tabla -->
     <div class="grafico">
       <h2>Distribución de monedas</h2>
-      <BarChart :chartData="chartData" />
+      <table class="tabla-monedas">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Alumno</th>
+            <th>Monedas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(alumno, i) in rankingData"
+            :key="alumno.username"
+            :class="{ top1: i === 0 }"
+          >
+            <td>{{ i + 1 }}</td>
+            <td>{{ alumno.username }}</td>
+            <td>{{ alumno.coins }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
     <!-- Historial de canjes -->
@@ -54,10 +73,9 @@
 
 <script>
 import api from '../../api';
-import BarChart from '../../components/BarChart.vue';
 
 export default {
-  components: { BarChart },
+  components: {},
   data() {
     return {
       estadisticas: {},
@@ -99,7 +117,10 @@ export default {
           ],
         };
       } else {
-        this.chartData = null;
+        this.chartData = {
+          labels: [],
+          datasets: [],
+        };
       }
     },
     async obtenerCanjes() {
@@ -151,5 +172,23 @@ export default {
 .historial td {
   border: 1px solid #ccc;
   padding: 0.5rem;
+}
+
+.tabla-monedas {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.tabla-monedas th,
+.tabla-monedas td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.tabla-monedas tr.top1 {
+  background-color: #d4edda;
+  font-weight: bold;
 }
 </style>
