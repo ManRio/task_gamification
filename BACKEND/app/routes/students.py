@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash
 from .. import db
-from ..models import User, TaskCompletion, Task
+from ..models import User, TaskCompletion, Task, CoinLog
 from ..utils.auth_helpers import role_required
 from datetime import datetime, timezone
 
@@ -41,6 +41,7 @@ def create_student():
     db.session.commit()
     return jsonify({"msg": "Alumno creado exitosamente"}), 201
 
+
 # LISTADO DE TODOS LOS ALUMNOS (solo profesor)
 @students_bp.route("/all", methods=["GET"])
 @jwt_required()
@@ -58,6 +59,7 @@ def list_all_students():
             "coins": s.coins
         } for s in students
     ]), 200
+
 
 # VER PERFIL DEL ALUMNO
 @students_bp.route("/me", methods=["GET"])
@@ -80,6 +82,7 @@ def view_profile():
         "coins": student.coins
     }), 200
 
+
 # VER ESTADÍSTICAS DEL ALUMNO
 @students_bp.route("/stats", methods=["GET"])
 @jwt_required()
@@ -95,6 +98,7 @@ def view_stats():
         "aprobadas": approved
     }), 200
 
+
 # RANKING GENERAL DE ALUMNOS (vista alumno)
 @students_bp.route("/ranking", methods=["GET"])
 @jwt_required()
@@ -105,6 +109,7 @@ def ranking():
         {"position": idx, "username": s.username, "coins": s.coins}
         for idx, s in enumerate(students, start=1)
     ]), 200
+
 
 # MI POSICIÓN EN EL RANKING
 @students_bp.route("/ranking/me", methods=["GET"])
@@ -117,6 +122,7 @@ def my_position():
         if s.id == user_id:
             return jsonify({"position": idx, "username": s.username, "coins": s.coins}), 200
     return jsonify({"msg": "Alumno no encontrado"}), 404
+
 
 # ESTADÍSTICAS GLOBALES (solo profesor)
 @students_bp.route("/stats/global", methods=["GET"])
@@ -137,6 +143,7 @@ def global_stats():
         "tareas_completadas": total_completadas,
         "monedas_en_sistema": monedas_totales
     }), 200
+
 
 # ESTADÍSTICAS DE UN ALUMNO POR SU ID (solo profesor)
 @students_bp.route("/stats/alumno/<int:alumno_id>", methods=["GET"])
@@ -159,12 +166,13 @@ def stats_alumno(alumno_id):
         "monedas_actuales": alumno.coins
     }), 200
 
+
 # ESTADÍSTICAS DE UNA TAREA (solo profesor)
 @students_bp.route("/stats/tarea/<int:task_id>", methods=["GET"])
 @jwt_required()
 @role_required("profesor")
 def stats_tarea(task_id):
-    task = Task.query.get(task_id)
+    task = User.query.session.get(Task, task_id) if hasattr(User.query, 'session') else db.session.get(Task, task_id)
     if not task:
         return jsonify({"msg": "Tarea no encontrada"}), 404
 
@@ -176,6 +184,7 @@ def stats_tarea(task_id):
         "veces_completada": completadas,
         "veces_aprobada": aprobadas
     }), 200
+
 
 # EDITAR PERFIL DEL ALUMNO (profesor)
 @students_bp.route("/<int:student_id>", methods=["PUT"])
@@ -194,6 +203,7 @@ def update_student(student_id):
     db.session.commit()
     return jsonify({"msg": "Alumno actualizado correctamente"}), 200
 
+
 @students_bp.route("/<int:student_id>", methods=["DELETE"])
 @jwt_required()
 @role_required("profesor")
@@ -204,6 +214,7 @@ def delete_student(student_id):
     db.session.delete(student)
     db.session.commit()
     return jsonify({"msg": "Alumno eliminado correctamente"}), 200
+
 
 # RANKING GENERAL DE ALUMNOS (para el profesor)
 @students_bp.route("/ranking/all", methods=["GET"])
@@ -216,7 +227,8 @@ def ranking_profesor():
         for idx, s in enumerate(students, start=1)
     ]), 200
 
-# ASIGNAR MONEDAS MANUALMENTE (solo profesor)
+
+# ASIGNAR MONEDAS MANUALMENTE (solo profesor) — SIEMPRE registra CoinLog
 @students_bp.route("/add-coins", methods=["POST"])
 @jwt_required()
 @role_required("profesor")
@@ -231,26 +243,19 @@ def add_coins():
     if coins <= 0:
         return jsonify({"msg": "El número de monedas debe ser mayor que 0"}), 400
 
-    student = User.query.get(student_id)
+    student = db.session.get(User, student_id)
     if not student or student.role != "alumno":
         return jsonify({"msg": "Alumno no encontrado"}), 404
 
     student.coins += coins
 
-    # (Opcional) registrar en CoinLog si existe el modelo
-    try:
-        from ..models import CoinLog  # si no existe, este import fallará
-        admin_id = int(get_jwt_identity())
-        log = CoinLog(
-            student_id=student.id,
-            coins=coins,
-            reason=reason or "asignación manual",
-            assigned_by=admin_id,
-        )
-        db.session.add(log)
-    except Exception:
-        # Silencioso si no existe CoinLog; no interrumpe la asignación de monedas
-        pass
+    admin_id = int(get_jwt_identity())
+    db.session.add(CoinLog(
+        student_id=student.id,
+        coins=coins,
+        reason=reason or "asignación manual",
+        assigned_by=admin_id
+    ))
 
     db.session.commit()
     return jsonify({
@@ -259,11 +264,12 @@ def add_coins():
         "new_balance": student.coins
     }), 200
 
+
+# FEED: Últimos movimientos de monedas (tareas aprobadas + asignaciones manuales)
 @students_bp.route("/coin-events", methods=["GET"])
 @jwt_required()
 @role_required("profesor")
 def coin_events():
-    """Últimos movimientos de monedas (aprobaciones de tareas + asignaciones manuales)."""
     try:
         limit = int(request.args.get("limit", 10))
     except ValueError:
@@ -271,22 +277,23 @@ def coin_events():
 
     events = []
 
-    # ---- Aprobaciones de tareas ----
-    # Nota: usamos completed_at como timestamp de referencia (si tienes validated_at, úsalo).
+    # Aprobaciones de tareas (usa validated_at si existe, si no completed_at)
+    ts_col = TaskCompletion.validated_at if hasattr(TaskCompletion, "validated_at") else TaskCompletion.completed_at
+
     rows = db.session.query(
         TaskCompletion.id.label("completion_id"),
         TaskCompletion.student_id.label("student_id"),
         User.username.label("username"),
         Task.title.label("task_title"),
         Task.reward.label("coins"),
-        TaskCompletion.completed_at.label("ts"),
+        ts_col.label("ts"),
     ).join(User, User.id == TaskCompletion.student_id
     ).join(Task, Task.id == TaskCompletion.task_id
     ).filter(
         TaskCompletion.is_validated == True,
         TaskCompletion.is_approved == True
-    ).order_by(TaskCompletion.completed_at.desc()
-    ).limit(limit * 2).all()  # pedimos un poco más por si luego mezclamos con manuales
+    ).order_by(ts_col.desc()
+    ).limit(limit * 2).all()
 
     for r in rows:
         ts = r.ts or datetime.now(timezone.utc)
@@ -300,37 +307,29 @@ def coin_events():
             "ref": f"completion:{r.completion_id}"
         })
 
-    # ---- Asignaciones manuales (si existe CoinLog) ----
-    try:
-        from ..models import CoinLog
-        mrows = db.session.query(
-            CoinLog.id.label("log_id"),
-            CoinLog.student_id.label("student_id"),
-            User.username.label("username"),
-            CoinLog.coins.label("coins"),
-            CoinLog.reason.label("reason"),
-            CoinLog.timestamp.label("ts"),
-        ).join(User, User.id == CoinLog.student_id
-        ).order_by(CoinLog.timestamp.desc()
-        ).limit(limit * 2).all()
+    # Asignaciones manuales desde CoinLog
+    mrows = db.session.query(
+        CoinLog.id.label("log_id"),
+        CoinLog.student_id.label("student_id"),
+        User.username.label("username"),
+        CoinLog.coins.label("coins"),
+        CoinLog.reason.label("reason"),
+        CoinLog.timestamp.label("ts"),
+    ).join(User, User.id == CoinLog.student_id
+    ).order_by(CoinLog.timestamp.desc()
+    ).limit(limit * 2).all()
 
-        for r in mrows:
-            ts = r.ts or datetime.now(timezone.utc)
-            events.append({
-                "type": "manual",
-                "timestamp": ts.isoformat(),
-                "student_id": r.student_id,
-                "username": r.username,
-                "coins": r.coins,
-                "detail": r.reason or "asignación manual",
-                "ref": f"coinlog:{r.log_id}"
-            })
-    except Exception:
-        # Si no hay CoinLog, simplemente omitimos manuales
-        pass
+    for r in mrows:
+        ts = r.ts or datetime.now(timezone.utc)
+        events.append({
+            "type": "manual",
+            "timestamp": ts.isoformat(),
+            "student_id": r.student_id,
+            "username": r.username,
+            "coins": r.coins,
+            "detail": r.reason or "asignación manual",
+            "ref": f"coinlog:{r.log_id}"
+        })
 
-    # Mezcla y recorte final
     events.sort(key=lambda e: e["timestamp"], reverse=True)
-    events = events[:limit]
-
-    return jsonify(events), 200
+    return jsonify(events[:limit]), 200

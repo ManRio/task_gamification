@@ -2,6 +2,10 @@
   <div class="contenedor">
     <h1>Ranking de Alumnos</h1>
 
+    <div style="margin-bottom: 0.75rem">
+      <button class="neutral" @click="refrescar">🔄 Refrescar</button>
+    </div>
+
     <!-- Tabla Ranking -->
     <table class="tabla" v-if="ranking.length">
       <thead>
@@ -62,10 +66,12 @@ export default {
     };
   },
   mounted() {
-    this.obtenerRanking();
-    this.obtenerMovimientos();
+    this.refrescar();
   },
   methods: {
+    async refrescar() {
+      await Promise.all([this.obtenerRanking(), this.obtenerMovimientos()]);
+    },
     async obtenerRanking() {
       try {
         const res = await api.get('/students/ranking/all');
@@ -114,5 +120,15 @@ export default {
 }
 .tabla th {
   background-color: #f5f5f5;
+}
+.neutral {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.neutral:hover {
+  background: #e9e9e9;
 }
 </style>

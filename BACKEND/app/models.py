@@ -1,7 +1,6 @@
 from . import db
 from datetime import datetime, timezone
 
-
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -16,23 +15,29 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=True)
     course = db.Column(db.String(40), nullable=True)
 
+
 class Task(db.Model):
     __tablename__ = "tasks"
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120))
     description = db.Column(db.String(200))
     reward = db.Column(db.Integer)
-    created_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
 
 class TaskCompletion(db.Model):
     __tablename__ = "task_completion"
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=False)
-    completed_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))  # mejora respecto a utcnow
+    # ⚠️ usa callable, no evalúes la fecha al importar el módulo
+    completed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_validated = db.Column(db.Boolean, default=False)
     is_approved = db.Column(db.Boolean, nullable=True)
+    # opcional pero útil para el feed temporal exacto
+    validated_at = db.Column(db.DateTime, nullable=True)
+
 
 class Reward(db.Model):
     __tablename__ = "rewards"
@@ -46,4 +51,16 @@ class RewardRedemption(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     reward_id = db.Column(db.Integer, db.ForeignKey("rewards.id"), nullable=False)
-    redeemed_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    redeemed_at = db.Column(
+        db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
+    )
+
+class CoinLog(db.Model):
+    __tablename__ = "coin_log"
+    id = db.Column(db.Integer, primary_key=True)
+    # ✅ corrige la FK: la tabla es "users", no "user"
+    student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    coins = db.Column(db.Integer, nullable=False)
+    reason = db.Column(db.String(255))
+    assigned_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    timestamp = db.Column(db.DateTime(timezone=True), server_default=db.func.now(), nullable=False)

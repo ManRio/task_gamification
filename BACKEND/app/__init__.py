@@ -18,9 +18,18 @@ def create_app():
 
     db.init_app(app)
     jwt.init_app(app)
-    CORS(app,
-     resources={r"/api/*": {"origins": "http://localhost:5173"}},
-     supports_credentials=True)
+    CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": ["http://localhost:5173"],
+            "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "expose_headers": ["Content-Type", "Authorization"],
+        }
+    },
+    supports_credentials=True,   # no molesta aunque uses Bearer
+)
 
     from .routes.auth import auth_bp
     from .routes.tasks import tasks_bp
