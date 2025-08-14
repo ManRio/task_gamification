@@ -45,7 +45,7 @@ import Header from '../components/Header.vue';
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.09; /* Ajusta la transparencia aquí */
+  opacity: 0.09; /* Ajustar la transparencia aquí */
   pointer-events: none;
   z-index: -1; /* Asegura que esté debajo del contenido */
 }
