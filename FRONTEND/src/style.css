@@ -8,8 +8,14 @@
 }
 
 body,
-html {
+html,
+#app {
   font-family: 'Poppins', sans-serif;
   height: 100%;
   width: 100%;
+}
+
+body {
+  margin: 0; /* quita márgenes por defecto */
+  background: #fff;
 }

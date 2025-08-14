@@ -1,61 +1,139 @@
 <template>
-  <div class="dashboard alumno">
-    <header class="dashboard-header">
-      <h1>Panel del Alumno</h1>
-    </header>
+  <div class="dashboard">
+    <h1>Mi Resumen</h1>
 
-    <main class="dashboard-main">
-      <section class="task-list">
-        <h2>Tareas Pendientes</h2>
-        <ul>
-          <li v-for="task in tasks" :key="task.id">
-            {{ task.title }} - <strong>{{ task.estado }}</strong>
-          </li>
-        </ul>
-      </section>
+    <!-- Tarjetas estadísticas -->
+    <div class="tarjetas">
+      <div class="tarjeta">
+        <h3>MONEDAS</h3>
+        <p>{{ estadisticas.coins }}</p>
+      </div>
+      <div class="tarjeta">
+        <h3>TAREAS COMPLETADAS</h3>
+        <p>{{ estadisticas.tasks_completed }}</p>
+      </div>
+      <div class="tarjeta">
+        <h3>RECOMPENSAS CANJEADAS</h3>
+        <p>{{ estadisticas.rewards_redeemed }}</p>
+      </div>
+    </div>
 
-      <section class="stats">
-        <p>
-          Monedas acumuladas: <strong>{{ monedas }}</strong>
-        </p>
-      </section>
-    </main>
+    <!-- Últimas tareas -->
+    <div class="bloque">
+      <h2>Últimas Tareas Completadas</h2>
+      <table v-if="ultimasTareas.length" class="tabla">
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Monedas</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="t in ultimasTareas" :key="t.id">
+            <td>{{ t.task_title }}</td>
+            <td>{{ t.task_reward }}</td>
+            <td>{{ formatearFecha(t.completed_at) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else>No has completado tareas aún.</p>
+    </div>
+
+    <!-- Últimos canjes -->
+    <div class="bloque">
+      <h2>Últimos Canjes</h2>
+      <table v-if="ultimosCanjes.length" class="tabla">
+        <thead>
+          <tr>
+            <th>Recompensa</th>
+            <th>Coste</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="c in ultimosCanjes" :key="c.id">
+            <td>{{ c.reward_name }}</td>
+            <td>{{ c.reward_cost }}</td>
+            <td>{{ formatearFecha(c.redeemed_at) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else>No has canjeado recompensas aún.</p>
+    </div>
   </div>
 </template>
 
 <script>
+import api from '../../services/api';
+
 export default {
-  name: 'AlumnoDashboard',
   data() {
     return {
-      monedas: 120,
-      tasks: [
-        { id: 1, title: 'Resumen de biología', estado: 'Pendiente' },
-        { id: 2, title: 'Ejercicio de inglés', estado: 'Completada' },
-      ],
+      estadisticas: {},
+      ultimasTareas: [],
+      ultimosCanjes: [],
     };
+  },
+  async mounted() {
+    await Promise.all([
+      this.obtenerEstadisticas(),
+      this.obtenerTareas(),
+      this.obtenerCanjes(),
+    ]);
+  },
+  methods: {
+    async obtenerEstadisticas() {
+      const res = await api.get('/students/stats/me');
+      this.estadisticas = res.data;
+    },
+    async obtenerTareas() {
+      const res = await api.get('/tasks/completed/me', {
+        params: { limit: 5 },
+      });
+      this.ultimasTareas = res.data;
+    },
+    async obtenerCanjes() {
+      const res = await api.get('/rewards/history/me', {
+        params: { limit: 5 },
+      });
+      this.ultimosCanjes = res.data;
+    },
+    formatearFecha(iso) {
+      return new Date(iso).toLocaleString();
+    },
   },
 };
 </script>
 
 <style scoped>
-.dashboard-header {
-  background-color: #28a745;
-  color: white;
+.dashboard {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+.tarjeta {
+  background: #f5f5f5;
   padding: 1rem;
+  border-radius: 8px;
   text-align: center;
 }
-
-.dashboard-main {
-  padding: 2rem;
+.bloque {
+  margin-top: 1rem;
 }
-
-.task-list,
-.stats {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tabla th,
+.tabla td {
+  border: 1px solid #ccc;
+  padding: 0.5rem;
 }
 </style>

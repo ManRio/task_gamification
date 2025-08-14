@@ -1,6 +1,6 @@
-# app/routes/tasks.py
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from datetime import datetime, timezone
 from .. import db
 from ..models import Task, TaskCompletion, User
 from ..utils.auth_helpers import role_required
@@ -92,7 +92,20 @@ def get_my_tasks():
     ]), 200
 
 
-# ----------------------- COMPLETAR / LISTAR COMPLETADAS (ALUMNO) -----------------------
+# ----------------------- ALUMNO: TAREAS DISPONIBLES / COMPLETAR / LISTAR -----------------------
+
+@tasks_bp.route("/available", methods=["GET"])
+@jwt_required()
+@role_required("alumno")
+def available_tasks():
+    """Lista las tareas que el alumno aún NO ha entregado."""
+    user_id = int(get_jwt_identity())
+    subq = db.session.query(TaskCompletion.task_id).filter(TaskCompletion.student_id == user_id)
+    tasks = Task.query.filter(~Task.id.in_(subq)).all()
+    return jsonify([{
+        "id": t.id, "title": t.title, "description": t.description, "reward": t.reward
+    } for t in tasks]), 200
+
 
 @tasks_bp.route("/complete/<int:task_id>", methods=["POST"])
 @jwt_required()
@@ -117,7 +130,7 @@ def complete_task(task_id):
 @jwt_required()
 @role_required("alumno")
 def get_completed_tasks():
-    """No dependemos de relaciones. Hacemos JOIN explícito."""
+    """Lista entregas del alumno con estado."""
     user_id = int(get_jwt_identity())
 
     rows = db.session.query(
@@ -147,13 +160,13 @@ def get_completed_tasks():
     ]), 200
 
 
-# ----------------------- PENDIENTES DE APROBACIÓN (PROFESOR) -----------------------
+# ----------------------- PROFESOR: PENDIENTES DE APROBACIÓN -----------------------
 
 @tasks_bp.route("/pending_approval", methods=["GET"])
 @jwt_required()
 @role_required("profesor")
 def pending_approval():
-    """Lista entregas pendientes. Sin relaciones; JOIN a Task y User."""
+    """Lista entregas pendientes. JOIN a Task y User."""
     prof_id = int(get_jwt_identity())
     show_all = (request.args.get("all", "false").lower() == "true")
 
@@ -189,10 +202,10 @@ def pending_approval():
     ]), 200
 
 
-# ----------------------- VALIDAR / RECHAZAR (PROFESOR) -----------------------
+# ----------------------- PROFESOR: VALIDAR / RECHAZAR -----------------------
 
 def _apply_validation(completion_id: int, approve: bool):
-    """Evita relaciones: carga todo con Session.get y actualiza."""
+    """Carga con Session.get y actualiza estado; suma monedas si procede."""
     completion = db.session.get(TaskCompletion, completion_id)
     if not completion:
         return None, (jsonify({"msg": "Registro no encontrado"}), 404)
@@ -202,6 +215,7 @@ def _apply_validation(completion_id: int, approve: bool):
 
     completion.is_validated = True
     completion.is_approved = bool(approve)
+    completion.validated_at = datetime.now(timezone.utc)  # <-- NUEVO
 
     student = None
     if approve:
@@ -213,7 +227,7 @@ def _apply_validation(completion_id: int, approve: bool):
 
         student.coins += task.reward
 
-        # (Opcional) CoinLog, si existe
+        # Registrar CoinLog si existe el modelo
         try:
             from ..models import CoinLog
             admin_id = int(get_jwt_identity())
@@ -260,7 +274,7 @@ def reject_task_post(completion_id):
     }), 200
 
 
-# Alias PATCH (compatibilidad con tu front previo)
+# Alias PATCH (compatibilidad con front previo)
 @tasks_bp.route("/validate/<int:completion_id>", methods=["PATCH"])
 @jwt_required()
 @role_required("profesor")

@@ -1,6 +1,7 @@
 from . import db
 from datetime import datetime, timezone
 
+
 class User(db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -9,7 +10,7 @@ class User(db.Model):
     role = db.Column(db.String(10), nullable=False)  # 'alumno' o 'profesor'
     coins = db.Column(db.Integer, default=0)
 
-    # NUEVOS CAMPOS:
+    # Datos adicionales
     first_name = db.Column(db.String(80), nullable=True)
     last_name = db.Column(db.String(80), nullable=True)
     email = db.Column(db.String(120), unique=True, nullable=True)
@@ -31,11 +32,11 @@ class TaskCompletion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=False)
-    # ⚠️ usa callable, no evalúes la fecha al importar el módulo
+    # Usa callable para que se evalúe en cada inserción
     completed_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     is_validated = db.Column(db.Boolean, default=False)
     is_approved = db.Column(db.Boolean, nullable=True)
-    # opcional pero útil para el feed temporal exacto
+    # NUEVO: cuándo se validó (aprobada o rechazada)
     validated_at = db.Column(db.DateTime, nullable=True)
 
 
@@ -46,6 +47,7 @@ class Reward(db.Model):
     cost = db.Column(db.Integer)
     description = db.Column(db.String(200))
 
+
 class RewardRedemption(db.Model):
     __tablename__ = "reward_redemptions"
     id = db.Column(db.Integer, primary_key=True)
@@ -55,10 +57,10 @@ class RewardRedemption(db.Model):
         db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False
     )
 
+
 class CoinLog(db.Model):
     __tablename__ = "coin_log"
     id = db.Column(db.Integer, primary_key=True)
-    # ✅ corrige la FK: la tabla es "users", no "user"
     student_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     coins = db.Column(db.Integer, nullable=False)
     reason = db.Column(db.String(255))

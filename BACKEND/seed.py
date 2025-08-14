@@ -1,5 +1,5 @@
 from app import create_app, db
-from app.models import User, Task, TaskCompletion, Reward, RewardRedemption
+from app.models import User, Task, TaskCompletion, Reward, RewardRedemption, CoinLog
 from datetime import datetime, timedelta, timezone
 from werkzeug.security import generate_password_hash
 
@@ -52,24 +52,45 @@ with app.app_context():
     db.session.add_all(tareas)
     db.session.commit()
 
-    # Completado de tareas
-    # Casos: aprobadas, rechazadas y pendientes para probar endpoints
+    # Completado de tareas (con validated_at en aprobadas/rechazadas)
     completadas = [
-        # Aprobadas (ya validadas)
-        TaskCompletion(student_id=alumnos[0].id, task_id=tareas[0].id, is_validated=True, is_approved=True,
-                       completed_at=datetime.now(timezone.utc) - timedelta(days=3)),
-        TaskCompletion(student_id=alumnos[1].id, task_id=tareas[1].id, is_validated=True, is_approved=True,
-                       completed_at=datetime.now(timezone.utc) - timedelta(days=2)),
-        # Rechazada (ya validada)
-        TaskCompletion(student_id=alumnos[2].id, task_id=tareas[2].id, is_validated=True, is_approved=False,
-                       completed_at=datetime.now(timezone.utc) - timedelta(days=1)),
-        # Pendientes (para probar /tasks/pending_approval y aprobar/rechazar)
-        TaskCompletion(student_id=alumnos[3].id, task_id=tareas[3].id,
-                       completed_at=datetime.now(timezone.utc) - timedelta(hours=6)),
-        TaskCompletion(student_id=alumnos[4].id, task_id=tareas[4].id,
-                       completed_at=datetime.now(timezone.utc) - timedelta(hours=1)),
+        TaskCompletion(
+            student_id=alumnos[0].id,
+            task_id=tareas[0].id,
+            is_validated=True,
+            is_approved=True,
+            completed_at=datetime.now(timezone.utc) - timedelta(days=3),
+            validated_at=datetime.now(timezone.utc) - timedelta(days=3)
+        ),
+        TaskCompletion(
+            student_id=alumnos[1].id,
+            task_id=tareas[1].id,
+            is_validated=True,
+            is_approved=True,
+            completed_at=datetime.now(timezone.utc) - timedelta(days=2),
+            validated_at=datetime.now(timezone.utc) - timedelta(days=2)
+        ),
+        TaskCompletion(
+            student_id=alumnos[2].id,
+            task_id=tareas[2].id,
+            is_validated=True,
+            is_approved=False,
+            completed_at=datetime.now(timezone.utc) - timedelta(days=1),
+            validated_at=datetime.now(timezone.utc) - timedelta(days=1)
+        ),
+        TaskCompletion(
+            student_id=alumnos[3].id,
+            task_id=tareas[3].id,
+            completed_at=datetime.now(timezone.utc) - timedelta(hours=6)
+        ),
+        TaskCompletion(
+            student_id=alumnos[4].id,
+            task_id=tareas[4].id,
+            completed_at=datetime.now(timezone.utc) - timedelta(hours=1)
+        ),
     ]
     db.session.add_all(completadas)
+    db.session.commit()
 
     # Recompensas
     recompensa1 = Reward(name="5 min extra de patio", cost=10, description="Disfruta de un recreo extendido")
@@ -79,12 +100,37 @@ with app.app_context():
 
     # Canjes de recompensas
     canjes = [
-        RewardRedemption(student_id=alumnos[1].id, reward_id=recompensa1.id,
-                         redeemed_at=datetime.now(timezone.utc) - timedelta(days=2)),
-        RewardRedemption(student_id=alumnos[2].id, reward_id=recompensa2.id,
-                         redeemed_at=datetime.now(timezone.utc) - timedelta(days=1)),
+        RewardRedemption(
+            student_id=alumnos[1].id,
+            reward_id=recompensa1.id,
+            redeemed_at=datetime.now(timezone.utc) - timedelta(days=2)
+        ),
+        RewardRedemption(
+            student_id=alumnos[2].id,
+            reward_id=recompensa2.id,
+            redeemed_at=datetime.now(timezone.utc) - timedelta(days=1)
+        ),
     ]
     db.session.add_all(canjes)
+
+    # Ejemplos de asignaciones manuales (CoinLog)
+    coin_logs = [
+        CoinLog(
+            student_id=alumnos[0].id,
+            coins=5,
+            reason="Participación en clase",
+            assigned_by=profe.id,
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=5)
+        ),
+        CoinLog(
+            student_id=alumnos[1].id,
+            coins=10,
+            reason="Ayuda a un compañero",
+            assigned_by=profe.id,
+            timestamp=datetime.now(timezone.utc) - timedelta(hours=3)
+        )
+    ]
+    db.session.add_all(coin_logs)
 
     db.session.commit()
     print("✅ Base de datos poblada con éxito.")

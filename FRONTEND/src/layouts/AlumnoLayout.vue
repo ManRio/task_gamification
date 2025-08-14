@@ -2,7 +2,8 @@
   <div class="layout">
     <Header />
     <div class="content">
-      <Sidebar role="profesor" />
+      <!-- La diferencia es el prop del Sidebar -->
+      <Sidebar role="alumno" />
       <main class="main-content">
         <router-view />
       </main>
@@ -28,25 +29,25 @@ import Header from '../components/Header.vue';
 }
 
 .main-content {
-  position: relative; /* 🔑 Necesario para que ::before se posicione dentro */
+  position: relative;
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  background-color: rgb(255, 255, 255);
+  background-color: #fff;
   z-index: 0;
 }
 
-/* Fondo con transparencia sin afectar contenido */
+/* 👉 mismo fondo translúcido que en profesor */
 .main-content::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url('/logonegro.png'); /* Ruta relativa desde /public */
+  background-image: url('/logonegro.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
-  opacity: 0.09; /* Ajusta la transparencia aquí */
+  opacity: 0.09;
   pointer-events: none;
-  z-index: -1; /* Asegura que esté debajo del contenido */
+  z-index: -1;
 }
 </style>

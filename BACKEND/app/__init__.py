@@ -5,6 +5,7 @@ from flask_cors import CORS
 from datetime import timedelta
 
 
+
 db = SQLAlchemy()
 jwt = JWTManager()
 
