@@ -49,7 +49,7 @@ export default {
     async cargar() {
       const [resMe, resAll] = await Promise.all([
         api.get('/students/ranking/me'),
-        api.get('/students/ranking/all'),
+        api.get('/students/ranking'),
       ]);
       this.miPosicion = resMe.data;
       this.ranking = resAll.data;

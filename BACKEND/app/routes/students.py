@@ -361,3 +361,83 @@ def my_coin_events():
 
     events.sort(key=lambda e: e["timestamp"], reverse=True)
     return jsonify(events[:limit]), 200
+
+# --- ALIAS PARA COMPATIBILIDAD CON EL FRONT (/students/stats/me) ---
+@students_bp.route("/stats/me", methods=["GET"])
+@jwt_required()
+@role_required("alumno")
+def stats_me_alias():
+    # reutiliza la función real
+    return view_stats()
+
+# --- RESUMEN PARA DASHBOARD DEL ALUMNO ---
+from datetime import datetime, timezone
+from ..models import RewardRedemption, Reward, Task, TaskCompletion, User
+
+@students_bp.route("/summary", methods=["GET"])
+@jwt_required()
+@role_required("alumno")
+def student_summary():
+    user_id = int(get_jwt_identity())
+    try:
+        limit = int(request.args.get("limit", 5))
+    except ValueError:
+        limit = 5
+
+    student = db.session.get(User, user_id)
+    coins = student.coins if student else 0
+
+    # Tareas aprobadas
+    ts_col = TaskCompletion.validated_at if hasattr(TaskCompletion, "validated_at") else TaskCompletion.completed_at
+    tasks_q = db.session.query(
+        TaskCompletion.id.label("completion_id"),
+        Task.title.label("task_title"),
+        Task.reward.label("task_reward"),
+        ts_col.label("ts"),
+    ).join(Task, Task.id == TaskCompletion.task_id
+    ).filter(
+        TaskCompletion.student_id == user_id,
+        TaskCompletion.is_validated == True,
+        TaskCompletion.is_approved == True
+    ).order_by(ts_col.desc())
+
+    tasks_completed = tasks_q.count()
+    tasks_rows = tasks_q.limit(limit).all()
+
+    ultimas_tareas = [{
+        "id": r.completion_id,
+        "task_title": r.task_title,
+        "task_reward": r.task_reward,
+        "completed_at": (r.ts or datetime.now(timezone.utc)).isoformat()
+    } for r in tasks_rows]
+
+    # Canjes
+    red_q = db.session.query(
+        RewardRedemption.id.label("id"),
+        Reward.name.label("reward_name"),
+        Reward.cost.label("reward_cost"),
+        RewardRedemption.redeemed_at.label("redeemed_at"),
+    ).join(Reward, Reward.id == RewardRedemption.reward_id
+    ).filter(RewardRedemption.student_id == user_id
+    ).order_by(RewardRedemption.redeemed_at.desc())
+
+    rewards_redeemed = red_q.count()
+    red_rows = red_q.limit(limit).all()
+
+    ultimos_canjes = [{
+        "id": r.id,
+        "reward_name": r.reward_name,
+        "reward_cost": r.reward_cost,
+        "redeemed_at": (r.redeemed_at or datetime.now(timezone.utc)).isoformat()
+    } for r in red_rows]
+
+    return jsonify({
+        "estadisticas": {
+            "coins": coins,
+            "tasks_completed": tasks_completed,
+            "rewards_redeemed": rewards_redeemed
+        },
+        "ultimasTareas": ultimas_tareas,
+        "ultimosCanjes": ultimos_canjes
+    }), 200
+

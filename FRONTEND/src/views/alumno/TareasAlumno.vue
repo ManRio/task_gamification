@@ -34,8 +34,9 @@
     </section>
 
     <!-- Historial -->
+    <!-- Historial -->
     <section style="margin-top: 2rem">
-      <h2>Tareas completadas</h2>
+      <h2>Historial de Tareas Completadas</h2>
       <table v-if="tareasCompletadas.length" class="tabla">
         <thead>
           <tr>
@@ -45,9 +46,9 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="t in tareasCompletadas" :key="t.id">
-            <td>{{ t.task_title }}</td>
-            <td>{{ t.task_reward }}</td>
+          <tr v-for="t in tareasCompletadas" :key="t.completion_id">
+            <td>{{ t.title }}</td>
+            <td>{{ t.reward }}</td>
             <td>{{ formatearFecha(t.completed_at) }}</td>
           </tr>
         </tbody>
@@ -81,8 +82,13 @@ export default {
       this.tareasDisponibles = res.data;
     },
     async obtenerCompletadas() {
-      const res = await api.get('/tasks/completed/me');
-      this.tareasCompletadas = res.data;
+      const res = await api.get('/tasks/completed'); // <-- ruta correcta
+      // Si quieres ver solo las aprobadas, descomenta la línea de abajo:
+      this.tareasCompletadas = res.data.filter(
+        (x) => x.is_validated && x.is_approved
+      );
+      // Si quieres ver todas las entregas (pendientes, aprobadas, rechazadas):
+      // this.tareasCompletadas = res.data;
     },
     async marcarCompletada(id) {
       if (!confirm('¿Marcar esta tarea como completada?')) return;

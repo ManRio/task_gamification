@@ -138,13 +138,12 @@ def redemption_history():
     for redemption in redemptions:
         reward = Reward.query.get(redemption.reward_id)
         result.append({
-            "reward_id": reward.id,
-            "name": reward.name,
-            "description": reward.description,
-            "cost": reward.cost,
+            "id": redemption.id,                 # ← añade id
+            "reward_name": reward.name,          # ← nombres coherentes con el front
+            "reward_cost": reward.cost,
             "redeemed_at": redemption.redeemed_at.isoformat()
         })
-    return jsonify([result]), 200
+    return jsonify(result), 200                  # ← NO [result]
 
 # ELIMINAR UN CANJE DE RECOMPENSA (SÓLO PROFESOR)
 @rewards_bp.route("/delete-redemption/<int:redemption_id>", methods=["DELETE"])
@@ -169,3 +168,10 @@ def delete_redemption(redemption_id):
     db.session.commit()
 
     return jsonify({"msg": "Canje eliminado y monedas devueltas"}), 200
+
+# --- ALIAS PARA COMPATIBILIDAD CON EL FRONT (/rewards/history/me) ---
+@rewards_bp.route("/history/me", methods=["GET"])
+@jwt_required()
+@role_required("alumno")
+def history_me_alias():
+    return redemption_history()

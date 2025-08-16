@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import api from '../../services/api';
+import api from '../../services/api'; // usa el mismo import que tenías para api
 
 export default {
   data() {
@@ -76,28 +76,14 @@ export default {
     };
   },
   async mounted() {
-    await Promise.all([
-      this.obtenerEstadisticas(),
-      this.obtenerTareas(),
-      this.obtenerCanjes(),
-    ]);
+    await this.cargarResumen();
   },
   methods: {
-    async obtenerEstadisticas() {
-      const res = await api.get('/students/stats/me');
-      this.estadisticas = res.data;
-    },
-    async obtenerTareas() {
-      const res = await api.get('/tasks/completed/me', {
-        params: { limit: 5 },
-      });
-      this.ultimasTareas = res.data;
-    },
-    async obtenerCanjes() {
-      const res = await api.get('/rewards/history/me', {
-        params: { limit: 5 },
-      });
-      this.ultimosCanjes = res.data;
+    async cargarResumen() {
+      const res = await api.get('/students/summary', { params: { limit: 5 } });
+      this.estadisticas = res.data.estadisticas;
+      this.ultimasTareas = res.data.ultimasTareas;
+      this.ultimosCanjes = res.data.ultimosCanjes;
     },
     formatearFecha(iso) {
       return new Date(iso).toLocaleString();

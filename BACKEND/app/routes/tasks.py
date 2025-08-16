@@ -287,3 +287,11 @@ def validate_task_patch(completion_id):
     if error:
         return error
     return jsonify({"msg": "Validación registrada correctamente"}), 200
+
+# --- ALIAS PARA COMPATIBILIDAD CON EL FRONT (/tasks/completed/me) ---
+@tasks_bp.route("/completed/me", methods=["GET"])
+@jwt_required()
+@role_required("alumno")
+def completed_me_alias():
+    return get_completed_tasks()
+

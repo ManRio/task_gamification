@@ -71,8 +71,8 @@ export default {
       this.recompensas = res.data;
     },
     async obtenerHistorial() {
-      const res = await api.get('/rewards/history/me');
-      this.historial = res.data;
+      const res = await api.get('/rewards/history'); // ← ruta correcta
+      this.historial = res.data; // ← ya viene plano
     },
     async canjear(id) {
       if (!confirm('¿Canjear esta recompensa?')) return;
