@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h1>Resumen General</h1>
+    <h1 class="principal_title">Resumen General</h1>
 
     <!-- Tarjetas estadísticas -->
     <div class="tarjetas">
@@ -12,7 +12,7 @@
 
     <!-- Podio de alumnos -->
     <div class="podio">
-      <h2>Top 3 alumnos</h2>
+      <h2 class="title">Top 3 alumnos</h2>
       <ol>
         <li v-for="(alumno, i) in topAlumnos" :key="alumno.username">
           <span>{{ ['🥇', '🥈', '🥉'][i] }}</span>
@@ -21,9 +21,9 @@
       </ol>
     </div>
 
-    <<!-- Distribución de monedas en tabla -->
+    <!-- Distribución de monedas en tabla -->
     <div class="grafico">
-      <h2>Distribución de monedas</h2>
+      <h2 class="title">Distribución de monedas</h2>
       <table class="tabla-monedas">
         <thead>
           <tr>
@@ -48,7 +48,7 @@
 
     <!-- Historial de canjes -->
     <div class="historial">
-      <h2>Historial de Canjes</h2>
+      <h2 class="title">Historial de Canjes</h2>
       <table>
         <thead>
           <tr>
@@ -75,7 +75,6 @@
 import api from '../../api';
 
 export default {
-  components: {},
   data() {
     return {
       estadisticas: {},
@@ -104,24 +103,6 @@ export default {
       const alumnos = res.data;
       this.topAlumnos = alumnos.slice(0, 3);
       this.rankingData = alumnos.slice(0, 10);
-
-      if (this.rankingData.length > 0) {
-        this.chartData = {
-          labels: this.rankingData.map((a) => a.username),
-          datasets: [
-            {
-              label: 'Monedas',
-              backgroundColor: '#42A5F5',
-              data: this.rankingData.map((a) => a.coins),
-            },
-          ],
-        };
-      } else {
-        this.chartData = {
-          labels: [],
-          datasets: [],
-        };
-      }
     },
     async obtenerCanjes() {
       const res = await api.get('/rewards/history/all');
@@ -138,55 +119,65 @@ export default {
   flex-direction: column;
   gap: 2rem;
 }
-
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
 .tarjetas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-rows: auto auto;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
 }
 .tarjeta {
-  background: #f5f5f5;
+  background: #d4edda;
   padding: 1rem;
   border-radius: 8px;
   text-align: center;
+  transition: ease 0.3s;
 }
-
+.tarjeta:hover {
+  background: #c3e6cb;
+  transform: scale(1.02);
+}
 .podio ol {
   list-style: none;
   padding: 0;
 }
-
 .podio li {
   background: #ecf0f1;
   padding: 0.5rem 1rem;
   margin: 0.3rem 0;
   border-radius: 6px;
 }
-
 .historial table {
   width: 100%;
   border-collapse: collapse;
 }
-
 .historial th,
 .historial td {
   border: 1px solid #ccc;
   padding: 0.5rem;
 }
-
 .tabla-monedas {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
-
 .tabla-monedas th,
 .tabla-monedas td {
   border: 1px solid #ccc;
   padding: 0.5rem;
   text-align: center;
 }
-
 .tabla-monedas tr.top1 {
   background-color: #d4edda;
   font-weight: bold;

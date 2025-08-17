@@ -1,17 +1,20 @@
 <template>
   <div class="contenedor">
-    <h1>Ranking</h1>
+    <h1 class="principal_title">Ranking</h1>
+    <div class="tarjetas">
+      <div class="tarjeta">
+        <h2>Mi posición</h2>
+        <p v-if="miPosicion">
+          #{{ miPosicion.position }} — {{ miPosicion.username }} ({{
+            miPosicion.coins
+          }}
+          🪙)
+        </p>
+        <p v-else>No estás en el ranking todavía.</p>
+      </div>
+    </div>
 
-    <h2>Mi posición</h2>
-    <p v-if="miPosicion">
-      #{{ miPosicion.position }} — {{ miPosicion.username }} ({{
-        miPosicion.coins
-      }}
-      🪙)
-    </p>
-    <p v-else>No estás en el ranking todavía.</p>
-
-    <h2 style="margin-top: 1.5rem">Ranking general</h2>
+    <h2 class="title">Ranking general</h2>
     <table v-if="ranking.length" class="tabla">
       <thead>
         <tr>
@@ -61,6 +64,31 @@ export default {
 <style scoped>
 .contenedor {
   padding: 2rem;
+}
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.tarjetas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+.tarjeta {
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  max-width: auto;
 }
 .tabla {
   width: 100%;

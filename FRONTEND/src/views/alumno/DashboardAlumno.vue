@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard">
-    <h1>Mi Resumen</h1>
+    <h1 vlass="principal_title">Mi Resumen</h1>
 
     <!-- Tarjetas estadísticas -->
     <div class="tarjetas">
@@ -20,7 +20,7 @@
 
     <!-- Últimas tareas -->
     <div class="bloque">
-      <h2>Últimas Tareas Completadas</h2>
+      <h2 class="title">Últimas Tareas Completadas</h2>
       <table v-if="ultimasTareas.length" class="tabla">
         <thead>
           <tr>
@@ -42,7 +42,7 @@
 
     <!-- Últimos canjes -->
     <div class="bloque">
-      <h2>Últimos Canjes</h2>
+      <h2 class="title">Últimos Canjes</h2>
       <table v-if="ultimosCanjes.length" class="tabla">
         <thead>
           <tr>
@@ -98,6 +98,18 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 .tarjetas {
   display: grid;

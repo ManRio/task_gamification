@@ -1,9 +1,9 @@
 <template>
   <div class="contenedor">
-    <h1>Ranking de Alumnos</h1>
+    <h1 class="principal_title">Ranking de Alumnos</h1>
 
     <div style="margin-bottom: 0.75rem">
-      <button class="neutral" @click="refrescar">🔄 Refrescar</button>
+      <button class="boton-toggle" @click="refrescar">🔄 Refrescar</button>
     </div>
 
     <!-- Tabla Ranking -->
@@ -26,7 +26,7 @@
     <p v-else>No hay datos de ranking disponibles.</p>
 
     <!-- Últimas concesiones -->
-    <h2 style="margin-top: 2rem">Últimas concesiones de monedas</h2>
+    <h2 class="title">Últimas concesiones de monedas</h2>
     <table class="tabla" v-if="movimientos.length">
       <thead>
         <tr>
@@ -60,10 +60,7 @@ import { useToast } from 'vue-toastification';
 
 export default {
   data() {
-    return {
-      ranking: [],
-      movimientos: [],
-    };
+    return { ranking: [], movimientos: [] };
   },
   mounted() {
     this.refrescar();
@@ -107,6 +104,27 @@ export default {
 .contenedor {
   padding: 2rem;
 }
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.boton-toggle {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1abc9c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 .tabla {
   width: 100%;
   border-collapse: collapse;
@@ -120,15 +138,5 @@ export default {
 }
 .tabla th {
   background-color: #f5f5f5;
-}
-.neutral {
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  padding: 0.4rem 0.7rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.neutral:hover {
-  background: #e9e9e9;
 }
 </style>

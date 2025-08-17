@@ -1,10 +1,10 @@
 <template>
   <div class="contenedor">
-    <h1>Mis Tareas</h1>
+    <h1 class="principal_title">Mis Tareas</h1>
 
     <!-- Tareas disponibles -->
     <section>
-      <h2>Tareas disponibles</h2>
+      <h2 class="title">Tareas disponibles</h2>
       <table v-if="tareasDisponibles.length" class="tabla">
         <thead>
           <tr>
@@ -36,7 +36,7 @@
     <!-- Historial -->
     <!-- Historial -->
     <section style="margin-top: 2rem">
-      <h2>Historial de Tareas Completadas</h2>
+      <h2 class="title">Historial de Tareas Completadas</h2>
       <table v-if="tareasCompletadas.length" class="tabla">
         <thead>
           <tr>
@@ -113,6 +113,18 @@ export default {
 <style scoped>
 .contenedor {
   padding: 2rem;
+}
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 .tabla {
   width: 100%;

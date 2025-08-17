@@ -19,3 +19,158 @@ body {
   margin: 0; /* quita márgenes por defecto */
   background: #fff;
 }
+
+:root {
+  /* Colores base de tu app */
+  --c-bg: #ffffff;
+  --c-text: #2c3e50;
+  --c-primary: #1abc9c;
+  --c-primary-dark: #16a085;
+  --c-border: #e5e7eb;
+  --c-muted: #f5f6f8;
+  --c-danger: #e74c3c;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 62, 80, 0.55); /* #2c3e50 con transparencia */
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 1rem; /* margen en móviles */
+  animation: overlayFade 0.15s ease-out;
+}
+
+/* Caja modal */
+.modal {
+  width: min(560px, 100%);
+  background: var(--c-bg);
+  color: var(--c-text);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transform: translateY(6px);
+  animation: modalPop 0.18s ease-out;
+}
+
+/* Zonas */
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: var(--c-muted);
+  border-bottom: 1px solid var(--c-border);
+}
+.modal__body {
+  padding: 1rem 1.25rem;
+}
+.modal__footer {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}
+
+/* Botón cerrar */
+.modal__close {
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--c-text);
+  opacity: 0.6;
+}
+.modal__close:hover {
+  opacity: 1;
+}
+
+/* Formulario (reutiliza tus clases actuales) */
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.campo label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.campo input,
+.campo textarea,
+.campo select {
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--c-border);
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+}
+.campo textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+.campo input:focus,
+.campo textarea:focus,
+.campo select:focus {
+  border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px rgba(26, 188, 156, 0.15);
+}
+
+/* Botones */
+.btn {
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+}
+.btn--primary {
+  background: var(--c-primary);
+  color: #fff;
+}
+.btn--primary:hover {
+  background: var(--c-primary-dark);
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--c-text);
+  border-color: var(--c-border);
+}
+.btn--ghost:hover {
+  background: var(--c-muted);
+}
+
+/* Animaciones */
+@keyframes overlayFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modalPop {
+  from {
+    transform: translateY(14px) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive: modal más compacto en pantallas pequeñas */
+@media (max-width: 480px) {
+  .modal__header,
+  .modal__body {
+    padding: 0.9rem 1rem;
+  }
+  .btn {
+    padding: 0.5rem 0.85rem;
+  }
+}

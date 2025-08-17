@@ -1,12 +1,12 @@
 <template>
   <div class="contenedor">
-    <h1>Recompensas disponibles</h1>
+    <h1 class="principal_title">Recompensas disponibles</h1>
 
     <div class="acciones">
-      <button class="neutral" @click="mostrarCrearRecompensa = true">
-        + Crear nueva recompensa
+      <button class="boton-toggle" @click="mostrarCrearRecompensa = true">
+        ➕ Crear nueva recompensa
       </button>
-      <button class="neutral" @click="abrirAsignacion">
+      <button class="boton-toggle" @click="abrirAsignacion">
         💰 Asignar monedas
       </button>
     </div>
@@ -38,45 +38,75 @@
     </table>
     <p v-else>No hay recompensas registradas.</p>
 
-    <!-- Modal: Crear Recompensa -->
-    <div v-if="mostrarCrearRecompensa" class="modal">
-      <h3>Crear nueva recompensa</h3>
-      <form @submit.prevent="crearRecompensa" class="formulario">
-        <div class="campo">
-          <label for="nombre">Nombre</label>
-          <input v-model="nuevaRecompensa.name" id="nombre" required />
-        </div>
+    <!-- MODAL: Crear Recompensa -->
+    <Teleport to="body">
+      <div
+        v-if="mostrarCrearRecompensa"
+        class="overlay"
+        @click.self="mostrarCrearRecompensa = false"
+      >
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-title"
+        >
+          <header class="modal__header">
+            <h3 id="modal-title">Crear nueva recompensa</h3>
+            <button
+              class="modal__close"
+              @click="mostrarCrearRecompensa = false"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
+          </header>
 
-        <div class="campo">
-          <label for="descripcion">Descripción</label>
-          <textarea
-            v-model="nuevaRecompensa.description"
-            id="descripcion"
-            required
-          />
-        </div>
+          <form
+            @submit.prevent="crearRecompensa"
+            class="modal__body formulario"
+          >
+            <div class="campo">
+              <label for="nombre">Nombre</label>
+              <input v-model="nuevaRecompensa.name" id="nombre" required />
+            </div>
 
-        <div class="campo">
-          <label for="coste">Coste en monedas</label>
-          <input
-            v-model.number="nuevaRecompensa.cost"
-            id="coste"
-            type="number"
-            min="1"
-            required
-          />
-        </div>
+            <div class="campo">
+              <label for="descripcion">Descripción</label>
+              <textarea
+                v-model="nuevaRecompensa.description"
+                id="descripcion"
+                required
+              />
+            </div>
 
-        <div class="acciones-form">
-          <button type="submit">Crear</button>
-          <button type="button" @click="mostrarCrearRecompensa = false">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+            <div class="campo">
+              <label for="coste">Coste en monedas</label>
+              <input
+                v-model.number="nuevaRecompensa.cost"
+                id="coste"
+                type="number"
+                min="1"
+                required
+              />
+            </div>
 
-    <!-- Modal: Editar Recompensa -->
+            <footer class="modal__footer">
+              <button type="submit" class="btn btn--primary">Crear</button>
+              <button
+                type="button"
+                class="btn btn--ghost"
+                @click="mostrarCrearRecompensa = false"
+              >
+                Cancelar
+              </button>
+            </footer>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- MODAL: Editar Recompensa (componente propio) -->
     <EditarRecompensa
       v-if="mostrarEditar"
       :recompensa="recompensaSeleccionada"
@@ -84,55 +114,91 @@
       @actualizada="actualizarEnLista"
     />
 
-    <!-- Modal: Asignar Monedas -->
-    <div v-if="mostrarAsignar" class="modal">
-      <h3>Asignar monedas a un alumno</h3>
+    <!-- MODAL: Asignar Monedas -->
+    <Teleport to="body">
+      <div v-if="mostrarAsignar" class="overlay" @click.self="cerrarAsignacion">
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="asignar-title"
+        >
+          <header class="modal__header">
+            <h3 id="asignar-title">Asignar monedas a un alumno</h3>
+            <button
+              class="modal__close"
+              aria-label="Cerrar"
+              @click="cerrarAsignacion"
+            >
+              ✕
+            </button>
+          </header>
 
-      <div v-if="cargandoAlumnos">Cargando alumnos…</div>
-      <form v-else @submit.prevent="asignarMonedas" class="formulario">
-        <div class="campo">
-          <label for="alumno">Alumno</label>
-          <select id="alumno" v-model.number="asignacion.student_id" required>
-            <option disabled value="">Selecciona un alumno</option>
-            <option v-for="a in alumnos" :key="a.id" :value="a.id">
-              {{ a.first_name }} {{ a.last_name }} — {{ a.username }} ({{
-                a.coins
-              }}
-              monedas)
-            </option>
-          </select>
-        </div>
+          <form
+            v-if="!cargandoAlumnos"
+            @submit.prevent="asignarMonedas"
+            class="modal__body formulario"
+          >
+            <div class="campo">
+              <label for="alumno">Alumno</label>
+              <select
+                id="alumno"
+                v-model.number="asignacion.student_id"
+                required
+              >
+                <option disabled value="">Selecciona un alumno</option>
+                <option v-for="a in alumnos" :key="a.id" :value="a.id">
+                  {{ a.first_name }} {{ a.last_name }} — {{ a.username }} ({{
+                    a.coins
+                  }}
+                  monedas)
+                </option>
+              </select>
+            </div>
 
-        <div class="campo">
-          <label for="coins">Monedas</label>
-          <input
-            id="coins"
-            type="number"
-            min="1"
-            v-model.number="asignacion.coins"
-            required
-          />
-        </div>
+            <div class="campo">
+              <label for="coins">Monedas</label>
+              <input
+                id="coins"
+                type="number"
+                min="1"
+                v-model.number="asignacion.coins"
+                required
+              />
+            </div>
 
-        <div class="campo">
-          <label for="reason">Motivo (opcional)</label>
-          <textarea
-            id="reason"
-            v-model="asignacion.reason"
-            placeholder="Ej.: comportamiento ejemplar, ayuda en clase…"
-          />
-        </div>
+            <div class="campo">
+              <label for="reason">Motivo (opcional)</label>
+              <textarea
+                id="reason"
+                v-model="asignacion.reason"
+                placeholder="Ej.: comportamiento ejemplar, ayuda en clase…"
+              />
+            </div>
 
-        <div class="acciones-form">
-          <button type="submit" :disabled="asignando">
-            {{ asignando ? 'Asignando…' : 'Asignar' }}
-          </button>
-          <button type="button" @click="cerrarAsignacion" :disabled="asignando">
-            Cancelar
-          </button>
+            <footer class="modal__footer">
+              <button
+                type="submit"
+                class="btn btn--primary"
+                :disabled="asignando"
+              >
+                {{ asignando ? 'Asignando…' : 'Asignar' }}
+              </button>
+              <button
+                type="button"
+                class="btn btn--ghost"
+                @click="cerrarAsignacion"
+                :disabled="asignando"
+              >
+                Cancelar
+              </button>
+            </footer>
+          </form>
+
+          <div v-else class="modal__body">Cargando alumnos…</div>
         </div>
-      </form>
-    </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -143,26 +209,68 @@ import EditarRecompensa from '../../components/EditarRecompensa.vue';
 
 export default {
   components: { EditarRecompensa },
+
   data() {
     return {
       recompensas: [],
+      // modales
       mostrarCrearRecompensa: false,
+      mostrarAsignar: false,
+      // editor
       mostrarEditar: false,
       recompensaSeleccionada: null,
       nuevaRecompensa: { name: '', description: '', cost: 1 },
-
-      // Asignación manual
-      mostrarAsignar: false,
+      // asignación manual
       alumnos: [],
       cargandoAlumnos: false,
       asignando: false,
       asignacion: { student_id: '', coins: 1, reason: '' },
+      // handlers para limpiar eventos
+      _onEscCrear: null,
+      _onEscAsignar: null,
     };
   },
+
+  watch: {
+    mostrarCrearRecompensa(open) {
+      this._toggleBodyAndEsc(open, 'crear');
+    },
+    mostrarAsignar(open) {
+      this._toggleBodyAndEsc(open, 'asignar');
+    },
+  },
+
   mounted() {
     this.obtenerRecompensas();
   },
+
+  beforeUnmount() {
+    if (this._onEscCrear)
+      window.removeEventListener('keydown', this._onEscCrear);
+    if (this._onEscAsignar)
+      window.removeEventListener('keydown', this._onEscAsignar);
+    document.body.style.overflow = '';
+  },
+
   methods: {
+    _toggleBodyAndEsc(open, cual) {
+      document.body.style.overflow = open ? 'hidden' : '';
+      const handler = (e) => {
+        if (e.key === 'Escape') {
+          if (cual === 'crear') this.mostrarCrearRecompensa = false;
+          else this.mostrarAsignar = false;
+        }
+      };
+      const key = cual === 'crear' ? '_onEscCrear' : '_onEscAsignar';
+      if (open) {
+        window.addEventListener('keydown', handler);
+        this[key] = handler;
+      } else if (this[key]) {
+        window.removeEventListener('keydown', this[key]);
+        this[key] = null;
+      }
+    },
+
     async obtenerRecompensas() {
       try {
         const res = await api.get('/rewards/list');
@@ -206,16 +314,14 @@ export default {
       this.mostrarEditar = false;
     },
     actualizarEnLista(recompensaEditada) {
-      const index = this.recompensas.findIndex(
+      const i = this.recompensas.findIndex(
         (r) => r.id === recompensaEditada.id
       );
-      if (index !== -1) this.recompensas.splice(index, 1, recompensaEditada);
+      if (i !== -1) this.recompensas.splice(i, 1, recompensaEditada);
     },
 
-    // ---- Asignación manual ----
     async abrirAsignacion() {
       this.mostrarAsignar = true;
-      // carga perezosa
       if (!this.alumnos.length) {
         this.cargandoAlumnos = true;
         try {
@@ -252,7 +358,6 @@ export default {
         };
         const res = await api.post('/students/add-coins', payload);
         this.toast.success(`Asignadas ${payload.coins} monedas`);
-        // actualizar saldo en el listado local de alumnos (si se está mostrando)
         const i = this.alumnos.findIndex((a) => a.id === payload.student_id);
         if (i !== -1 && res?.data?.new_balance != null) {
           this.alumnos[i] = { ...this.alumnos[i], coins: res.data.new_balance };
@@ -266,6 +371,7 @@ export default {
       }
     },
   },
+
   setup() {
     const toast = useToast();
     return { toast };
@@ -277,7 +383,27 @@ export default {
 .contenedor {
   padding: 2rem;
 }
-
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.boton-toggle {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1abc9c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 .tabla {
   width: 100%;
   border-collapse: collapse;
@@ -291,7 +417,6 @@ export default {
 .tabla th {
   background-color: #f5f5f5;
 }
-
 .acciones,
 .acciones-form {
   margin-top: 1.5rem;
@@ -299,21 +424,6 @@ export default {
   gap: 1rem;
   align-items: center;
 }
-.neutral {
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  padding: 0.4rem 0.7rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.neutral:hover {
-  background: #e9e9e9;
-}
-.neutral:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .editar {
   background: #3498db;
   color: white;
@@ -327,34 +437,5 @@ export default {
   padding: 0.3rem 0.7rem;
   border: none;
   border-radius: 4px;
-}
-
-.modal {
-  position: fixed;
-  top: 12%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  width: 420px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-}
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.campo label {
-  font-weight: bold;
-  margin-bottom: 0.3rem;
-}
-.campo input,
-.campo textarea,
-.campo select {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
 }
 </style>

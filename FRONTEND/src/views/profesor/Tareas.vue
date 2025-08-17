@@ -1,10 +1,12 @@
 <template>
   <div class="contenedor">
-    <h1>Tareas asignadas</h1>
+    <h1 class="principal_title">Tareas asignadas</h1>
 
     <!-- Acciones -->
     <div class="acciones">
-      <button @click="mostrarCrearTarea = true">+ Crear nueva tarea</button>
+      <button class="secundario" @click="mostrarCrearTarea = true">
+        ➕ Crear nueva tarea
+      </button>
       <button
         class="secundario"
         @click="refrescarTodo"
@@ -16,7 +18,7 @@
 
     <!-- BLOQUE: Pendientes de aprobación -->
     <section class="bloque">
-      <h2>Pendientes de aprobación</h2>
+      <h2 class="title">Pendientes de aprobación</h2>
 
       <div v-if="cargandoPendientes">Cargando pendientes…</div>
       <table v-else-if="pendientes.length" class="tabla">
@@ -37,14 +39,14 @@
             <td>{{ formatearFecha(p.completed_at) }}</td>
             <td>
               <button
-                class="aprobar"
+                class="secundario aprobar"
                 :disabled="accionandoId === p.completion_id"
                 @click="aprobarEntrega(p)"
               >
                 ✅ Aprobar
               </button>
               <button
-                class="rechazar"
+                class="secundario rechazar"
                 :disabled="accionandoId === p.completion_id"
                 @click="rechazarEntrega(p)"
               >
@@ -59,7 +61,7 @@
 
     <!-- BLOQUE: Tareas del profesor -->
     <section class="bloque">
-      <h2>Mis tareas</h2>
+      <h2 class="title">Tareas creadas por mi</h2>
 
       <div v-if="cargandoTareas">Cargando tareas…</div>
       <table v-else-if="tareas.length" class="tabla">
@@ -89,45 +91,75 @@
       <p v-else>No hay tareas aún.</p>
     </section>
 
-    <!-- Modal: Crear Tarea -->
-    <div v-if="mostrarCrearTarea" class="modal">
-      <h3>Crear nueva tarea</h3>
-      <form @submit.prevent="crearTarea" class="formulario-tarea">
-        <div class="campo">
-          <label for="titulo">Título</label>
-          <input v-model="nuevaTarea.titulo" id="titulo" required />
-        </div>
+    <!-- MODAL: Crear Tarea -->
+    <Teleport to="body">
+      <div
+        v-if="mostrarCrearTarea"
+        class="overlay"
+        @click.self="mostrarCrearTarea = false"
+      >
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="crear-tarea-title"
+        >
+          <header class="modal__header">
+            <h3 id="crear-tarea-title">Crear nueva tarea</h3>
+            <button
+              class="modal__close"
+              aria-label="Cerrar"
+              @click="mostrarCrearTarea = false"
+            >
+              ✕
+            </button>
+          </header>
 
-        <div class="campo">
-          <label for="descripcion">Descripción</label>
-          <textarea
-            v-model="nuevaTarea.descripcion"
-            id="descripcion"
-            required
-          ></textarea>
-        </div>
+          <form
+            @submit.prevent="crearTarea"
+            class="modal__body formulario-tarea"
+          >
+            <div class="campo">
+              <label for="titulo">Título</label>
+              <input v-model="nuevaTarea.titulo" id="titulo" required />
+            </div>
 
-        <div class="campo">
-          <label for="monedas">Monedas</label>
-          <input
-            v-model.number="nuevaTarea.monedas"
-            id="monedas"
-            type="number"
-            min="1"
-            required
-          />
-        </div>
+            <div class="campo">
+              <label for="descripcion">Descripción</label>
+              <textarea
+                v-model="nuevaTarea.descripcion"
+                id="descripcion"
+                required
+              ></textarea>
+            </div>
 
-        <div class="acciones-form">
-          <button type="submit">Crear</button>
-          <button type="button" @click="mostrarCrearTarea = false">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
+            <div class="campo">
+              <label for="monedas">Monedas</label>
+              <input
+                v-model.number="nuevaTarea.monedas"
+                id="monedas"
+                type="number"
+                min="1"
+                required
+              />
+            </div>
 
-    <!-- Modal: Editar Tarea -->
+            <footer class="modal__footer">
+              <button type="submit" class="btn btn--primary">Crear</button>
+              <button
+                type="button"
+                class="btn btn--ghost"
+                @click="mostrarCrearTarea = false"
+              >
+                Cancelar
+              </button>
+            </footer>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- Modal: Editar Tarea (componente propio) -->
     <EditarTarea
       v-if="mostrarEditarTarea"
       :tarea="tareaSeleccionada"
@@ -151,27 +183,39 @@ export default {
   },
   data() {
     return {
-      // Mis tareas
       tareas: [],
       cargandoTareas: false,
-
-      // Pendientes de aprobación
       pendientes: [],
       cargandoPendientes: false,
-      accionandoId: null, // para deshabilitar botones mientras se envía
+      accionandoId: null,
 
-      // Modales
       mostrarCrearTarea: false,
       mostrarEditarTarea: false,
       tareaSeleccionada: null,
 
-      // Form crear
-      nuevaTarea: {
-        titulo: '',
-        descripcion: '',
-        monedas: 1,
-      },
+      nuevaTarea: { titulo: '', descripcion: '', monedas: 1 },
+
+      _onEscCrear: null,
     };
+  },
+  watch: {
+    mostrarCrearTarea(open) {
+      document.body.style.overflow = open ? 'hidden' : '';
+      const handler = (e) =>
+        e.key === 'Escape' && (this.mostrarCrearTarea = false);
+      if (open) {
+        window.addEventListener('keydown', handler);
+        this._onEscCrear = handler;
+      } else if (this._onEscCrear) {
+        window.removeEventListener('keydown', this._onEscCrear);
+        this._onEscCrear = null;
+      }
+    },
+  },
+  beforeUnmount() {
+    if (this._onEscCrear)
+      window.removeEventListener('keydown', this._onEscCrear);
+    document.body.style.overflow = '';
   },
   mounted() {
     this.refrescarTodo();
@@ -185,7 +229,6 @@ export default {
     async obtenerPendientes() {
       this.cargandoPendientes = true;
       try {
-        // Por defecto trae las pendientes de las tareas que creó el profesor autenticado
         const res = await api.get('/tasks/pending_approval');
         this.pendientes = res.data;
       } catch (error) {
@@ -200,22 +243,19 @@ export default {
       if (this.accionandoId) return;
       this.accionandoId = p.completion_id;
 
-      // Optimista: la quito de la lista ya
       const backup = [...this.pendientes];
       this.pendientes = this.pendientes.filter(
         (x) => x.completion_id !== p.completion_id
       );
 
       try {
-        const res = await api.post(`/tasks/validate/${p.completion_id}`);
-        // feedback
+        await api.post(`/tasks/validate/${p.completion_id}`);
         this.toast.success(
           `Aprobada: "${p.task_title}" (+${p.task_reward} monedas)`
         );
       } catch (error) {
         console.error('Error al aprobar:', error);
         this.toast.error('No se pudo aprobar. Reintentando cargar.');
-        // revert
         this.pendientes = backup;
       } finally {
         this.accionandoId = null;
@@ -224,10 +264,12 @@ export default {
 
     async rechazarEntrega(p) {
       if (this.accionandoId) return;
-      const confirmar = confirm(
-        `¿Rechazar la entrega de "${p.task_title}" de ${p.student_username}?`
-      );
-      if (!confirmar) return;
+      if (
+        !confirm(
+          `¿Rechazar la entrega de "${p.task_title}" de ${p.student_username}?`
+        )
+      )
+        return;
 
       this.accionandoId = p.completion_id;
 
@@ -251,8 +293,7 @@ export default {
     formatearFecha(iso) {
       if (!iso) return '—';
       try {
-        const d = new Date(iso);
-        return d.toLocaleString();
+        return new Date(iso).toLocaleString();
       } catch {
         return iso;
       }
@@ -321,23 +362,35 @@ export default {
 .contenedor {
   padding: 2rem;
 }
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
 .acciones {
   margin-bottom: 1.5rem;
   display: flex;
   gap: 0.5rem;
 }
 .secundario {
-  background: #f0f0f0;
-  border: 1px solid #ddd;
-  padding: 0.4rem 0.8rem;
-  border-radius: 4px;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #1abc9c;
+  color: white;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
 }
-
 .bloque {
   margin-top: 2rem;
 }
-
 .tabla {
   width: 100%;
   border-collapse: collapse;
@@ -351,7 +404,6 @@ export default {
 .tabla th {
   background-color: #f5f5f5;
 }
-
 .editar,
 .eliminar,
 .aprobar,
@@ -378,19 +430,6 @@ export default {
   background-color: #8e44ad;
   color: white;
 }
-
-.modal {
-  position: fixed;
-  top: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-  width: 400px;
-  z-index: 1000;
-}
 .formulario-tarea {
   display: flex;
   flex-direction: column;
@@ -409,10 +448,5 @@ export default {
   padding: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 6px;
-}
-.acciones-form {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
 }
 </style>

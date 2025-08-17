@@ -1,17 +1,10 @@
 <template>
   <div class="alumnos">
-    <h2>Gestión de alumnos</h2>
+    <h2 class="principal_title">Gestión de alumnos</h2>
 
-    <button @click="toggleFormulario" class="boton-toggle">
-      {{ mostrarFormulario ? 'Cerrar formulario' : 'Crear nuevo alumno' }}
+    <button @click="abrirFormulario" class="boton-toggle">
+      {{ alumnoEditando ? 'Editar alumno' : 'Crear nuevo alumno' }}
     </button>
-
-    <!-- Formulario condicional -->
-    <FormularioCrearAlumno
-      v-if="mostrarFormulario"
-      :alumnoEditar="alumnoEditando"
-      @alumnoCreado="handleAlumnoCreado"
-    />
 
     <!-- Filtros -->
     <div class="filtros">
@@ -49,11 +42,47 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- MODAL: Crear/Editar alumno -->
+    <Teleport to="body">
+      <div
+        v-if="mostrarFormulario"
+        class="overlay"
+        @click.self="cerrarFormulario"
+      >
+        <div
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="alumnos-form-title"
+        >
+          <header class="modal__header">
+            <h3 id="alumnos-form-title">
+              {{ alumnoEditando ? 'Editar alumno' : 'Crear alumno' }}
+            </h3>
+            <button
+              class="modal__close"
+              aria-label="Cerrar"
+              @click="cerrarFormulario"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div class="modal__body">
+            <FormularioCrearAlumno
+              :alumnoEditar="alumnoEditando"
+              @alumnoCreado="handleAlumnoCreado"
+            />
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
 import axios from '../../services/api';
 import FormularioCrearAlumno from '../../components/FormularioCrearAlumno.vue';
 
@@ -68,6 +97,23 @@ const filtro = ref({
   curso: '',
 });
 
+const _onEsc = ref(null);
+watch(mostrarFormulario, (open) => {
+  document.body.style.overflow = open ? 'hidden' : '';
+  if (open) {
+    _onEsc.value = (e) =>
+      e.key === 'Escape' && (mostrarFormulario.value = false);
+    window.addEventListener('keydown', _onEsc.value);
+  } else if (_onEsc.value) {
+    window.removeEventListener('keydown', _onEsc.value);
+    _onEsc.value = null;
+  }
+});
+onBeforeUnmount(() => {
+  if (_onEsc.value) window.removeEventListener('keydown', _onEsc.value);
+  document.body.style.overflow = '';
+});
+
 const fetchAlumnos = async () => {
   try {
     const res = await axios.get('/students/all');
@@ -78,16 +124,17 @@ const fetchAlumnos = async () => {
 };
 
 const handleAlumnoCreado = () => {
-  mostrarFormulario.value = false;
-  alumnoEditando.value = null;
+  cerrarFormulario();
   fetchAlumnos();
 };
 
-const toggleFormulario = () => {
-  if (mostrarFormulario.value && alumnoEditando.value) {
-    alumnoEditando.value = null;
-  }
-  mostrarFormulario.value = !mostrarFormulario.value;
+const abrirFormulario = () => {
+  mostrarFormulario.value = true;
+};
+
+const cerrarFormulario = () => {
+  mostrarFormulario.value = false;
+  alumnoEditando.value = null;
 };
 
 const editarAlumno = (alumno) => {
@@ -121,9 +168,7 @@ const alumnosFiltrados = computed(() => {
   });
 });
 
-onMounted(() => {
-  fetchAlumnos();
-});
+onMounted(fetchAlumnos);
 </script>
 
 <style scoped>
@@ -131,7 +176,12 @@ onMounted(() => {
   max-width: 900px;
   margin: 2rem auto;
 }
-
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
 .boton-toggle {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
@@ -141,38 +191,32 @@ onMounted(() => {
   border-radius: 6px;
   cursor: pointer;
 }
-
 .filtros {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
   margin: 1rem 0;
 }
-
 .filtros input {
   padding: 8px;
   flex: 1 1 200px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
-
 table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
-
 th,
 td {
   padding: 0.75rem;
   border: 1px solid #ddd;
   text-align: left;
 }
-
 th {
   background-color: #f5f5f5;
 }
-
 button {
   margin-right: 5px;
   padding: 4px 8px;

@@ -1,6 +1,6 @@
 <template>
   <div class="contenedor">
-    <h1>Historial de Canjes</h1>
+    <h1 class="principal_title">Historial de Canjes</h1>
 
     <table v-if="canjes.length" class="tabla">
       <thead>
@@ -37,9 +37,7 @@ import { useToast } from 'vue-toastification';
 
 export default {
   data() {
-    return {
-      canjes: [],
-    };
+    return { canjes: [] };
   },
   mounted() {
     this.obtenerCanjes();
@@ -58,14 +56,13 @@ export default {
         !confirm('¿Eliminar este canje? Se devolverán las monedas al alumno.')
       )
         return;
-
       try {
         await api.delete(`/rewards/delete-redemption/${id}`);
         this.canjes = this.canjes.filter((c) => c.id !== id);
-        this.$toast.success('Canje eliminado y monedas devueltas');
+        useToast().success('Canje eliminado y monedas devueltas');
       } catch (error) {
         console.error('Error al eliminar canje:', error);
-        this.$toast.error('No se pudo eliminar el canje');
+        useToast().error('No se pudo eliminar el canje');
       }
     },
     formatearFecha(fechaIso) {
@@ -79,24 +76,26 @@ export default {
 .contenedor {
   padding: 2rem;
 }
-
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
 .tabla {
   width: 100%;
   border-collapse: collapse;
   margin-top: 1rem;
 }
-
 .tabla th,
 .tabla td {
   padding: 0.75rem;
   border: 1px solid #ccc;
   text-align: left;
 }
-
 .tabla th {
   background-color: #f5f5f5;
 }
-
 .eliminar {
   background-color: #e74c3c;
   color: white;

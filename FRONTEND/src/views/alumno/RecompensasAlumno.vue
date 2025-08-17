@@ -1,6 +1,6 @@
 <template>
   <div class="contenedor">
-    <h1>Recompensas</h1>
+    <h1 class="principal_title">Recompensas</h1>
 
     <table v-if="recompensas.length" class="tabla">
       <thead>
@@ -26,7 +26,7 @@
     </table>
     <p v-else>No hay recompensas disponibles.</p>
 
-    <h2 style="margin-top: 2rem">Historial de canjes</h2>
+    <h2 class="title">Historial de canjes</h2>
     <table v-if="historial.length" class="tabla">
       <thead>
         <tr>
@@ -98,6 +98,19 @@ export default {
 .contenedor {
   padding: 2rem;
 }
+.principal_title {
+  margin: 0 auto;
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+.title {
+  margin-top: 2rem;
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
 .tabla {
   width: 100%;
   border-collapse: collapse;
